@@ -1,0 +1,82 @@
+<MudNavMenu>
+    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">
+        Dashboard
+    </MudNavLink>
+    
+    <MudNavGroup Text="Machines" Icon="@Icons.Material.Filled.PrecisionManufacturing" Expanded="true">
+        <MudNavLink Href="/machines" Icon="@Icons.Material.Filled.List">
+            Machine List
+        </MudNavLink>
+        <MudNavLink Href="/machines/status" Icon="@Icons.Material.Filled.MonitorHeart">
+            Status Monitor
+        </MudNavLink>
+        <MudNavLink Href="/machines/add" Icon="@Icons.Material.Filled.Add">
+            Add Machine
+        </MudNavLink>
+    </MudNavGroup>
+    
+    <MudNavGroup Text="Commands" Icon="@Icons.Material.Filled.Terminal" Expanded="false">
+        <MudNavLink Href="/commands" Icon="@Icons.Material.Filled.List">
+            Command History
+        </MudNavLink>
+        <MudNavLink Href="/commands/create" Icon="@Icons.Material.Filled.Add">
+            Create Command
+        </MudNavLink>
+        <MudNavLink Href="/commands/batch" Icon="@Icons.Material.Filled.BatchPrediction">
+            Batch Commands
+        </MudNavLink>
+        <MudNavLink Href="/commands/templates" Icon="@Icons.Material.Filled.Article">
+            Templates
+        </MudNavLink>
+    </MudNavGroup>
+    
+    <MudNavGroup Text="Logs" Icon="@Icons.Material.Filled.Description" Expanded="false">
+        <MudNavLink Href="/logs" Icon="@Icons.Material.Filled.List">
+            Log Viewer
+        </MudNavLink>
+        <MudNavLink Href="/logs/analytics" Icon="@Icons.Material.Filled.Analytics">
+            Log Analytics
+        </MudNavLink>
+        <MudNavLink Href="/logs/export" Icon="@Icons.Material.Filled.FileDownload">
+            Export Logs
+        </MudNavLink>
+    </MudNavGroup>
+    
+    <MudNavGroup Text="Reports" Icon="@Icons.Material.Filled.Assessment" Expanded="false">
+        <MudNavLink Href="/reports" Icon="@Icons.Material.Filled.Dashboard">
+            Dashboard Reports
+        </MudNavLink>
+        <MudNavLink Href="/reports/performance" Icon="@Icons.Material.Filled.ShowChart">
+            Performance
+        </MudNavLink>
+        <MudNavLink Href="/reports/downtime" Icon="@Icons.Material.Filled.ErrorOutline">
+            Downtime Analysis
+        </MudNavLink>
+        <MudNavLink Href="/reports/custom" Icon="@Icons.Material.Filled.BuildCircle">
+            Custom Reports
+        </MudNavLink>
+    </MudNavGroup>
+    
+    <MudDivider Class="my-2" />
+    
+    <MudNavGroup Text="Administration" Icon="@Icons.Material.Filled.AdminPanelSettings" Expanded="false">
+        <MudNavLink Href="/admin/users" Icon="@Icons.Material.Filled.People">
+            User Management
+        </MudNavLink>
+        <MudNavLink Href="/admin/settings" Icon="@Icons.Material.Filled.Settings">
+            System Settings
+        </MudNavLink>
+        <MudNavLink Href="/admin/backup" Icon="@Icons.Material.Filled.Backup">
+            Backup & Restore
+        </MudNavLink>
+        <MudNavLink Href="/admin/maintenance" Icon="@Icons.Material.Filled.Build">
+            Database Maintenance
+        </MudNavLink>
+    </MudNavGroup>
+    
+    <MudDivider Class="my-2" />
+    
+    <MudNavLink Href="/help" Icon="@Icons.Material.Filled.Help">
+        Help & Support
+    </MudNavLink>
+</MudNavMenu>
