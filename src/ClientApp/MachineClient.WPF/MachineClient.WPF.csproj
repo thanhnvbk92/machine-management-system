@@ -5,7 +5,7 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
-    <ApplicationIcon>Resources\app.ico</ApplicationIcon>
+    <ApplicationIcon></ApplicationIcon>
     <AssemblyTitle>Machine Client App</AssemblyTitle>
     <AssemblyDescription>Desktop client for machine log collection and remote control</AssemblyDescription>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
@@ -29,9 +29,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\MachineClient.Core\MachineClient.Core.csproj" />
-  </ItemGroup>
+
 
   <ItemGroup>
     <Resource Include="Resources\**" />
