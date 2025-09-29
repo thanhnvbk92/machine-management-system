@@ -1,0 +1,321 @@
+@page "/machines/{id:int}"
+@inject IMachineService MachineService
+@inject ILogService LogService
+@inject ICommandService CommandService
+@inject ILogger<MachineDetails> Logger
+
+<PageTitle>Machine Details - Machine Management System</PageTitle>
+
+@if (_machine != null)
+{
+    <div class="d-flex justify-space-between align-center mb-4">
+        <div>
+            <MudText Typo="Typo.h4">@_machine.MachineName</MudText>
+            <MudText Typo="Typo.body1" Class="mud-text-secondary">@_machine.MachineCode</MudText>
+        </div>
+        <div class="d-flex gap-2">
+            <MudChip Color="GetMachineStatusColor(_machine)" Size="Size.Large">
+                @GetMachineStatus(_machine)
+            </MudChip>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" 
+                       StartIcon="@Icons.Material.Filled.Send">
+                Send Command
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" 
+                       StartIcon="@Icons.Material.Filled.Edit">
+                Edit Machine
+            </MudButton>
+        </div>
+    </div>
+
+    <!-- Machine Information Cards -->
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Machine Information</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <div class="d-flex flex-column gap-3">
+                        <div>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Machine Type</MudText>
+                            <MudText Typo="Typo.body1">@_machine.MachineType</MudText>
+                        </div>
+                        @if (!string.IsNullOrEmpty(_machine.Description))
+                        {
+                            <div>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">Description</MudText>
+                                <MudText Typo="Typo.body2">@_machine.Description</MudText>
+                            </div>
+                        }
+                        <div>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Created</MudText>
+                            <MudText Typo="Typo.body2">@_machine.CreatedAt.ToString("yyyy-MM-dd HH:mm")</MudText>
+                        </div>
+                        <div>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Last Updated</MudText>
+                            <MudText Typo="Typo.body2">@(_machine.UpdatedAt?.ToString("yyyy-MM-dd HH:mm") ?? "Never")</MudText>
+                        </div>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Quick Stats</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <div class="d-flex flex-column gap-3">
+                        <div class="d-flex justify-space-between align-center">
+                            <MudText>Total Logs</MudText>
+                            <MudChip Size="Size.Small">@_logCount</MudChip>
+                        </div>
+                        <div class="d-flex justify-space-between align-center">
+                            <MudText>Pending Commands</MudText>
+                            <MudChip Color="Color.Warning" Size="Size.Small">@_pendingCommands</MudChip>
+                        </div>
+                        <div class="d-flex justify-space-between align-center">
+                            <MudText>Active</MudText>
+                            <MudSwitch @bind-Checked="_machine.IsActive" Color="Color.Primary" ReadOnly="true" />
+                        </div>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Connection Status</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <div class="text-center">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" 
+                                 Color="Color.Success" 
+                                 Size="Size.Large" 
+                                 Class="mb-2" />
+                        <MudText Typo="Typo.h6" Color="Color.Success">Connected</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                            Last seen: 2 minutes ago
+                        </MudText>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Recent Logs -->
+    <MudCard Elevation="4" Class="mb-4">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h6">Recent Logs</MudText>
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <MudButton Variant="Variant.Text" Color="Color.Primary" Href="@($"/logs?machine={_machine.MachineId}")">
+                    View All Logs
+                </MudButton>
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+            @if (_recentLogs != null && _recentLogs.Any())
+            {
+                <div class="d-flex flex-column gap-2">
+                    @foreach (var log in _recentLogs.Take(5))
+                    {
+                        <div class="@($"log-entry {log.LogLevel.ToLower()}")">
+                            <div class="d-flex align-center justify-space-between">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-center gap-2 mb-1">
+                                        <MudChip Size="Size.Small" Color="GetLogLevelColor(log.LogLevel)">
+                                            @log.LogLevel
+                                        </MudChip>
+                                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                            @log.LogTimestamp.ToString("HH:mm:ss")
+                                        </MudText>
+                                    </div>
+                                    <MudText Typo="Typo.body2">@log.Message</MudText>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Class="text-center mud-text-secondary">
+                    No recent logs available
+                </MudText>
+            }
+        </MudCardContent>
+    </MudCard>
+
+    <!-- Recent Commands -->
+    <MudCard Elevation="4">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h6">Recent Commands</MudText>
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <MudButton Variant="Variant.Text" Color="Color.Primary" Href="@($"/commands?machine={_machine.MachineId}")">
+                    View All Commands
+                </MudButton>
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+            @if (_recentCommands != null && _recentCommands.Any())
+            {
+                <MudTable Items="_recentCommands" Dense="true" Hover="true">
+                    <HeaderContent>
+                        <MudTh>Command</MudTh>
+                        <MudTh>Type</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh>Created</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>Command #@context.CommandId</MudTd>
+                        <MudTd>@context.CommandType</MudTd>
+                        <MudTd>
+                            <MudChip Size="Size.Small" Color="GetCommandStatusColor(context.Status)">
+                                @context.Status
+                            </MudChip>
+                        </MudTd>
+                        <MudTd>@context.CreatedAt.ToString("MM/dd HH:mm")</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Class="text-center mud-text-secondary">
+                    No recent commands
+                </MudText>
+            }
+        </MudCardContent>
+    </MudCard>
+}
+else
+{
+    <!-- Loading State -->
+    <MudContainer Class="text-center pa-8">
+        <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+        <MudText Typo="Typo.h6" Class="mt-4">Loading Machine Details...</MudText>
+    </MudContainer>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Machine? _machine;
+    private IEnumerable<LogData>? _recentLogs;
+    private IEnumerable<Command>? _recentCommands;
+    private long _logCount;
+    private int _pendingCommands;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMachineDetails();
+        await LoadRecentLogs();
+        await LoadRecentCommands();
+        await LoadStats();
+    }
+
+    private async Task LoadMachineDetails()
+    {
+        try
+        {
+            _machine = await MachineService.GetMachineByIdAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading machine details for ID: {MachineId}", Id);
+        }
+    }
+
+    private async Task LoadRecentLogs()
+    {
+        try
+        {
+            _recentLogs = await LogService.GetLogsByMachineIdAsync(Id, 10);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading recent logs for machine: {MachineId}", Id);
+        }
+    }
+
+    private async Task LoadRecentCommands()
+    {
+        try
+        {
+            var commands = await CommandService.GetCommandsByMachineIdAsync(Id);
+            _recentCommands = commands.OrderByDescending(c => c.CreatedAt).Take(5);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading recent commands for machine: {MachineId}", Id);
+        }
+    }
+
+    private async Task LoadStats()
+    {
+        try
+        {
+            _logCount = await LogService.GetLogCountByMachineAsync(Id);
+            _pendingCommands = await CommandService.GetPendingCommandCountByMachineAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading stats for machine: {MachineId}", Id);
+        }
+    }
+
+    // Helper methods
+    private string GetMachineStatus(Machine machine)
+    {
+        // Placeholder implementation - would need actual status tracking
+        return "Online"; // This should be replaced with actual status logic
+    }
+
+    private Color GetMachineStatusColor(Machine machine)
+    {
+        var status = GetMachineStatus(machine);
+        return status switch
+        {
+            "Online" => Color.Success,
+            "Offline" => Color.Warning,
+            "Error" => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private Color GetLogLevelColor(string level)
+    {
+        return level.ToLower() switch
+        {
+            "error" => Color.Error,
+            "warning" => Color.Warning,
+            "info" => Color.Info,
+            "debug" => Color.Secondary,
+            _ => Color.Default
+        };
+    }
+
+    private Color GetCommandStatusColor(string status)
+    {
+        return status.ToLower() switch
+        {
+            "pending" => Color.Info,
+            "running" => Color.Warning,
+            "completed" => Color.Success,
+            "failed" => Color.Error,
+            _ => Color.Default
+        };
+    }
+}
