@@ -1,0 +1,72 @@
+# Multi-stage build for Manager Web App (Blazor Server)
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
+WORKDIR /src
+
+# TODO: Update paths when ManagerApp project is created
+# Copy csproj files and restore dependencies
+# COPY ["src/ManagerApp/MachineManagement.ManagerApp/MachineManagement.ManagerApp.csproj", "ManagerApp/MachineManagement.ManagerApp/"]
+
+# TODO: Uncomment when ManagerApp project exists
+# RUN dotnet restore "ManagerApp/MachineManagement.ManagerApp/MachineManagement.ManagerApp.csproj"
+
+# Copy source code
+# COPY src/ManagerApp/ ManagerApp/
+
+# Build and publish
+# RUN dotnet publish "ManagerApp/MachineManagement.ManagerApp/MachineManagement.ManagerApp.csproj" \
+#     -c Release -o /app/publish /p:UseAppHost=false
+
+# For now, create a placeholder structure
+RUN mkdir -p /app/publish && \
+    echo "ManagerApp placeholder" > /app/publish/placeholder.txt
+
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS runtime
+
+# Install required packages
+RUN apk add --no-cache \
+    curl \
+    tzdata \
+    icu-libs
+
+# Set globalization invariant mode (for better performance in containers)
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+
+# Create app user for security
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -S appuser -G appgroup -u 1001
+
+# Set timezone
+ENV TZ=UTC
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+WORKDIR /app
+
+# Copy published application
+COPY --from=build /app/publish .
+
+# Create necessary directories
+RUN mkdir -p /app/logs /app/wwwroot/uploads /app/temp && \
+    chown -R appuser:appgroup /app
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Environment variables for Blazor Server
+ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV Logging__LogLevel__Default=Information
+ENV Logging__LogLevel__Microsoft.AspNetCore.SignalR=Information
+ENV Logging__LogLevel__Microsoft.AspNetCore.Http.Connections=Information
+
+# Entry point (placeholder until ManagerApp project is created)
+CMD ["echo", "Manager Web App entry point - To be configured when ManagerApp project is created"]
+# TODO: Replace with actual entry point when ManagerApp project exists
+# ENTRYPOINT ["dotnet", "MachineManagement.ManagerApp.dll"]

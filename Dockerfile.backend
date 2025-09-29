@@ -1,0 +1,71 @@
+# Multi-stage build for Backend API
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
+WORKDIR /src
+
+# Copy csproj files and restore dependencies
+COPY ["src/Backend/MachineManagement.Core/MachineManagement.Core.csproj", "Backend/MachineManagement.Core/"]
+COPY ["src/Backend/MachineManagement.Infrastructure/MachineManagement.Infrastructure.csproj", "Backend/MachineManagement.Infrastructure/"]
+# TODO: Add API project when created
+# COPY ["src/Backend/MachineManagement.API/MachineManagement.API.csproj", "Backend/MachineManagement.API/"]
+
+# Restore dependencies
+RUN dotnet restore "Backend/MachineManagement.Core/MachineManagement.Core.csproj"
+RUN dotnet restore "Backend/MachineManagement.Infrastructure/MachineManagement.Infrastructure.csproj"
+# TODO: Uncomment when API project exists
+# RUN dotnet restore "Backend/MachineManagement.API/MachineManagement.API.csproj"
+
+# Copy source code
+COPY src/Backend/ Backend/
+
+# Build and publish
+RUN dotnet build "Backend/MachineManagement.Core/MachineManagement.Core.csproj" -c Release -o /app/build
+RUN dotnet build "Backend/MachineManagement.Infrastructure/MachineManagement.Infrastructure.csproj" -c Release -o /app/build
+# TODO: Uncomment and update when API project exists
+# RUN dotnet publish "Backend/MachineManagement.API/MachineManagement.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS runtime
+
+# Install required packages
+RUN apk add --no-cache \
+    curl \
+    tzdata
+
+# Create app user for security
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -S appuser -G appgroup -u 1001
+
+# Set timezone (configurable via environment variable)
+ENV TZ=UTC
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+WORKDIR /app
+
+# Copy published application
+# TODO: Update this when API project is ready
+# COPY --from=build /app/publish .
+COPY --from=build /app/build .
+
+# Create necessary directories
+RUN mkdir -p /app/logs /app/temp && \
+    chown -R appuser:appgroup /app
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Environment variables
+ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV Logging__LogLevel__Default=Information
+
+# Entry point (placeholder until API project is created)
+CMD ["echo", "Backend API entry point - To be configured when API project is created"]
+# TODO: Replace with actual entry point when API project exists
+# ENTRYPOINT ["dotnet", "MachineManagement.API.dll"]

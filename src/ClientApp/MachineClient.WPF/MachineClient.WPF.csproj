@@ -29,9 +29,10 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
-  <ItemGroup>
+  <!-- ProjectReference to Core project will be added when created -->
+  <!-- <ItemGroup>
     <ProjectReference Include="..\MachineClient.Core\MachineClient.Core.csproj" />
-  </ItemGroup>
+  </ItemGroup> -->
 
   <ItemGroup>
     <Resource Include="Resources\**" />
