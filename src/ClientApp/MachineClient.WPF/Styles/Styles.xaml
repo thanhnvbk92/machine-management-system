@@ -1,0 +1,144 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+
+    <!-- Card Styles -->
+    <Style x:Key="StatusCard" TargetType="materialDesign:Card">
+        <Setter Property="Margin" Value="8"/>
+        <Setter Property="Padding" Value="16"/>
+        <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp2"/>
+        <Setter Property="Background" Value="{DynamicResource MaterialDesignCardBackground}"/>
+    </Style>
+
+    <Style x:Key="InfoCard" TargetType="materialDesign:Card" BasedOn="{StaticResource StatusCard}">
+        <Setter Property="materialDesign:ColorZoneAssist.Mode" Value="PrimaryLight"/>
+    </Style>
+
+    <Style x:Key="MetricCard" TargetType="materialDesign:Card" BasedOn="{StaticResource StatusCard}">
+        <Setter Property="MinHeight" Value="120"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    </Style>
+
+    <!-- Button Styles -->
+    <Style x:Key="ActionButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
+        <Setter Property="Margin" Value="4"/>
+        <Setter Property="Padding" Value="16,8"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+    </Style>
+
+    <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource ActionButton}">
+        <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="4"/>
+        <Setter Property="Background" Value="{DynamicResource PrimaryHueMidBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidForegroundBrush}"/>
+    </Style>
+
+    <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+        <Setter Property="Margin" Value="4"/>
+        <Setter Property="Padding" Value="16,8"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryHueMidBrush}"/>
+    </Style>
+
+    <!-- Text Styles -->
+    <Style x:Key="HeaderTextBlock" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="20"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
+        <Setter Property="Margin" Value="0,0,0,8"/>
+    </Style>
+
+    <Style x:Key="SubHeaderTextBlock" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
+        <Setter Property="Margin" Value="0,0,0,4"/>
+    </Style>
+
+    <Style x:Key="MetricTextBlock" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="28"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+
+    <Style x:Key="MetricLabelTextBlock" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontWeight" Value="Regular"/>
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBodyLight}"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,4,0,0"/>
+    </Style>
+
+    <Style x:Key="StatusTextBlock" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- Connection Status Indicator -->
+    <Style x:Key="ConnectionStatusIndicator" TargetType="Ellipse">
+        <Setter Property="Width" Value="14"/>
+        <Setter Property="Height" Value="14"/>
+        <Setter Property="Fill" Value="{DynamicResource MaterialDesignBodyLight}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,0,8,0"/>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                <Setter Property="Fill" Value="#4CAF50"/>  <!-- Green -->
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsConnected}" Value="False">
+                <Setter Property="Fill" Value="#F44336"/>  <!-- Red -->
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Input Controls -->
+    <Style x:Key="ConfigTextBox" TargetType="TextBox" BasedOn="{StaticResource MaterialDesignOutlinedTextBox}">
+        <Setter Property="Margin" Value="0,4"/>
+        <Setter Property="Padding" Value="8"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="materialDesign:TextFieldAssist.OutlinedCornerRadius" Value="4"/>
+    </Style>
+
+    <Style x:Key="ConfigNumericUpDown" TargetType="materialDesign:NumericUpDown">
+        <Setter Property="Margin" Value="0,4"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="materialDesign:TextFieldAssist.OutlinedCornerRadius" Value="4"/>
+    </Style>
+
+    <!-- DataGrid Styles -->
+    <Style x:Key="LogDataGrid" TargetType="DataGrid" BasedOn="{StaticResource MaterialDesignDataGrid}">
+        <Setter Property="AutoGenerateColumns" Value="False"/>
+        <Setter Property="CanUserAddRows" Value="False"/>
+        <Setter Property="CanUserDeleteRows" Value="False"/>
+        <Setter Property="IsReadOnly" Value="True"/>
+        <Setter Property="SelectionMode" Value="Single"/>
+        <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+        <Setter Property="HeadersVisibility" Value="Column"/>
+        <Setter Property="materialDesign:DataGridAssist.CellPadding" Value="8,4"/>
+        <Setter Property="materialDesign:DataGridAssist.ColumnHeaderPadding" Value="8,8"/>
+        <Setter Property="AlternatingRowBackground" Value="{DynamicResource MaterialDesignDivider}"/>
+        <Setter Property="FontSize" Value="13"/>
+    </Style>
+
+    <!-- Progress Bar -->
+    <Style x:Key="StatusProgressBar" TargetType="ProgressBar" BasedOn="{StaticResource MaterialDesignLinearProgressBar}">
+        <Setter Property="Height" Value="4"/>
+        <Setter Property="Margin" Value="0,8,0,0"/>
+        <Setter Property="materialDesign:TransitionAssist.DisableTransitions" Value="True"/>
+    </Style>
+
+    <!-- Icon Styles -->
+    <Style x:Key="StatusIcon" TargetType="materialDesign:PackIcon">
+        <Setter Property="Width" Value="20"/>
+        <Setter Property="Height" Value="20"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,0,8,0"/>
+    </Style>
+
+    <Style x:Key="LargeIcon" TargetType="materialDesign:PackIcon" BasedOn="{StaticResource StatusIcon}">
+        <Setter Property="Width" Value="32"/>
+        <Setter Property="Height" Value="32"/>
+    </Style>
+
+</ResourceDictionary>
