@@ -1,0 +1,331 @@
+@page "/"
+@using Microsoft.AspNetCore.SignalR.Client
+@implements IAsyncDisposable
+@inject IDashboardService DashboardService
+@inject IJSRuntime JSRuntime
+@inject ILogger<Dashboard> Logger
+
+<PageTitle>Dashboard - Machine Management System</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">Machine Management Dashboard</MudText>
+
+@if (_metrics != null)
+{
+    <!-- Key Performance Indicators -->
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="4">
+                <MudCardContent>
+                    <div class="d-flex justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">Total Machines</MudText>
+                            <MudText Typo="Typo.h4">@_metrics.TotalMachines</MudText>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.PrecisionManufacturing" Color="Color.Primary" Size="Size.Large" />
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="4">
+                <MudCardContent>
+                    <div class="d-flex justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">Online Machines</MudText>
+                            <MudText Typo="Typo.h4" Color="Color.Success">@_metrics.OnlineMachines</MudText>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="4">
+                <MudCardContent>
+                    <div class="d-flex justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">Offline Machines</MudText>
+                            <MudText Typo="Typo.h4" Color="Color.Warning">@_metrics.OfflineMachines</MudText>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Warning" Size="Size.Large" />
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="4">
+                <MudCardContent>
+                    <div class="d-flex justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">Pending Commands</MudText>
+                            <MudText Typo="Typo.h4" Color="Color.Info">@_metrics.PendingCommands</MudText>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.Schedule" Color="Color.Info" Size="Size.Large" />
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Charts and Analytics -->
+    <MudGrid>
+        <MudItem xs="12" md="8">
+            <MudCard Elevation="4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Machine Status Distribution</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (_statusDistribution != null && _statusDistribution.Any())
+                    {
+                        <div style="height: 300px;">
+                            <!-- Chart placeholder - would integrate with Chart.js or similar -->
+                            <MudText Typo="Typo.body1" Class="text-center pa-4">
+                                Machine Status Chart (Chart.js integration needed)
+                            </MudText>
+                            @foreach (var status in _statusDistribution)
+                            {
+                                <MudProgressLinear Color="GetStatusColor(status.Key)" Value="@GetStatusPercentage(status.Value)" Class="mb-2">
+                                    <MudText Typo="Typo.body2">@status.Key: @status.Value</MudText>
+                                </MudProgressLinear>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="4" Class="mb-4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">System Health</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (_systemHealth != null)
+                    {
+                        <div class="d-flex flex-column gap-2">
+                            <div class="d-flex justify-space-between align-center">
+                                <MudText>Database</MudText>
+                                <MudChip Color="@(_systemHealth.DatabaseHealth ? Color.Success : Color.Error)" Size="Size.Small">
+                                    @(_systemHealth.DatabaseHealth ? "Healthy" : "Error")
+                                </MudChip>
+                            </div>
+                            <div class="d-flex justify-space-between align-center">
+                                <MudText>API</MudText>
+                                <MudChip Color="@(_systemHealth.ApiHealth ? Color.Success : Color.Error)" Size="Size.Small">
+                                    @(_systemHealth.ApiHealth ? "Healthy" : "Error")
+                                </MudChip>
+                            </div>
+                            <div class="d-flex justify-space-between align-center">
+                                <MudText>SignalR</MudText>
+                                <MudChip Color="@(_systemHealth.SignalRHealth ? Color.Success : Color.Error)" Size="Size.Small">
+                                    @(_systemHealth.SignalRHealth ? "Healthy" : "Error")
+                                </MudChip>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Small" />
+                    }
+                </MudCardContent>
+            </MudCard>
+            
+            <!-- Active Alerts -->
+            <MudCard Elevation="4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Active Alerts</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (_alerts != null && _alerts.Any())
+                    {
+                        <div class="d-flex flex-column gap-2">
+                            @foreach (var alert in _alerts.Take(5))
+                            {
+                                <MudAlert Severity="GetAlertSeverity(alert.Severity)" Dense="true">
+                                    <MudText Typo="Typo.body2">@alert.Message</MudText>
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                        @alert.CreatedAt.ToString("HH:mm:ss")
+                                    </MudText>
+                                </MudAlert>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary text-center">
+                            No active alerts
+                        </MudText>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Recent Activity -->
+    <MudGrid Class="mt-4">
+        <MudItem xs="12">
+            <MudCard Elevation="4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Recent Activity</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Default" OnClick="RefreshData" />
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (_recentActivities != null && _recentActivities.Any())
+                    {
+                        <MudTimeline>
+                            @foreach (var activity in _recentActivities.Take(10))
+                            {
+                                <MudTimelineItem Color="GetActivityColor(activity.Type)" Size="Size.Small">
+                                    <MudText Typo="Typo.body1">@activity.Description</MudText>
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                        @activity.MachineName - @activity.Timestamp.ToString("MM/dd HH:mm")
+                                    </MudText>
+                                </MudTimelineItem>
+                            }
+                        </MudTimeline>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary text-center">
+                            No recent activity
+                        </MudText>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+}
+else
+{
+    <!-- Loading State -->
+    <MudContainer Class="text-center pa-8">
+        <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+        <MudText Typo="Typo.h6" Class="mt-4">Loading Dashboard...</MudText>
+    </MudContainer>
+}
+
+@code {
+    private HubConnection? _hubConnection;
+    private DashboardMetrics? _metrics;
+    private IEnumerable<AlertInfo>? _alerts;
+    private IEnumerable<RecentActivity>? _recentActivities;
+    private SystemHealthStatus? _systemHealth;
+    private Dictionary<string, int>? _statusDistribution;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+        await InitializeSignalR();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        try
+        {
+            _metrics = await DashboardService.GetDashboardMetricsAsync();
+            _alerts = await DashboardService.GetActiveAlertsAsync();
+            _recentActivities = await DashboardService.GetRecentActivitiesAsync();
+            _systemHealth = await DashboardService.GetSystemHealthAsync();
+            _statusDistribution = await DashboardService.GetMachineStatusDistributionAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading dashboard data");
+        }
+    }
+
+    private async Task InitializeSignalR()
+    {
+        try
+        {
+            _hubConnection = new HubConnectionBuilder()
+                .WithUrl("/notificationHub")
+                .Build();
+
+            _hubConnection.On<object>("DashboardUpdated", (data) =>
+            {
+                InvokeAsync(() =>
+                {
+                    LoadDashboardData();
+                    StateHasChanged();
+                });
+            });
+
+            await _hubConnection.StartAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error initializing SignalR connection");
+        }
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadDashboardData();
+        StateHasChanged();
+    }
+
+    private Color GetStatusColor(string status)
+    {
+        return status.ToLower() switch
+        {
+            "online" => Color.Success,
+            "offline" => Color.Warning,
+            "error" => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private Color GetActivityColor(string type)
+    {
+        return type.ToLower() switch
+        {
+            "command" => Color.Info,
+            "error" => Color.Error,
+            "warning" => Color.Warning,
+            _ => Color.Default
+        };
+    }
+
+    private Severity GetAlertSeverity(string severity)
+    {
+        return severity.ToLower() switch
+        {
+            "error" => Severity.Error,
+            "warning" => Severity.Warning,
+            "info" => Severity.Info,
+            _ => Severity.Normal
+        };
+    }
+
+    private double GetStatusPercentage(int value)
+    {
+        if (_metrics == null || _metrics.TotalMachines == 0) return 0;
+        return (double)value / _metrics.TotalMachines * 100;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hubConnection is not null)
+        {
+            await _hubConnection.DisposeAsync();
+        }
+    }
+}

@@ -1,0 +1,52 @@
+@inherits LayoutComponentBase
+@using MudBlazor
+
+<MudThemeProvider Theme="_theme" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudSpacer />
+        <MudText Typo="Typo.h5" Class="ml-3">Machine Management System</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="Icons.Material.Filled.Notifications" Color="Color.Inherit" />
+        <MudIconButton Icon="Icons.Material.Filled.Settings" Color="Color.Inherit" />
+        <MudMenu Icon="@Icons.Material.Filled.Person" Color="Color.Inherit">
+            <MudMenuItem Icon="@Icons.Material.Filled.Person">Profile</MudMenuItem>
+            <MudMenuItem Icon="@Icons.Material.Filled.Settings">Settings</MudMenuItem>
+            <MudDivider />
+            <MudMenuItem Icon="@Icons.Material.Filled.Logout">Logout</MudMenuItem>
+        </MudMenu>
+    </MudAppBar>
+    
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
+        <NavMenu />
+    </MudDrawer>
+    
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    bool _drawerOpen = true;
+    
+    MudTheme _theme = new()
+    {
+        Palette = new Palette()
+        {
+            Primary = "#1976d2",
+            Secondary = "#424242",
+            AppbarBackground = "#1976d2",
+        }
+    };
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+}
