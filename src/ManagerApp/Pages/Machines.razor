@@ -1,0 +1,339 @@
+@page "/machines"
+@using MachineManagement.ManagerApp.Models
+@using MachineManagement.ManagerApp.Services
+@using Microsoft.AspNetCore.SignalR.Client
+@implements IAsyncDisposable
+@inject IMachineService MachineService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject ILogger<Machines> Logger
+
+<PageTitle>Machines - Machine Management</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <div class="d-flex justify-space-between align-center mb-6">
+        <MudText Typo="Typo.h4">
+            <MudIcon Icon="@Icons.Material.Filled.Precision" Class="mr-3" />
+            Machine Management
+        </MudText>
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Primary" 
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="OpenCreateDialog">
+            Add Machine
+        </MudButton>
+    </div>
+
+    <!-- Search and Filter -->
+    <MudCard Class="pa-4 mb-4">
+        <MudGrid>
+            <MudItem xs="12" md="4">
+                <MudTextField @bind-Value="searchTerm" 
+                              Placeholder="Search machines..."
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              OnKeyUp="OnSearchKeyUp" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudSelect @bind-Value="statusFilter" Label="Status Filter" AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem Value="@("")">All</MudSelectItem>
+                    <MudSelectItem Value="online">Online</MudSelectItem>
+                    <MudSelectItem Value="offline">Offline</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudSelect @bind-Value="typeFilter" Label="Type Filter" AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem Value="@("")">All Types</MudSelectItem>
+                    <MudSelectItem Value="CNC">CNC</MudSelectItem>
+                    <MudSelectItem Value="Robot">Robot</MudSelectItem>
+                    <MudSelectItem Value="Conveyor">Conveyor</MudSelectItem>
+                    <MudSelectItem Value="Other">Other</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           FullWidth="true"
+                           StartIcon="@Icons.Material.Filled.FilterList"
+                           OnClick="ApplyFilters">
+                    Filter
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudCard>
+
+    @if (isLoading)
+    {
+        <MudContainer Class="d-flex justify-center align-center" Style="height: 50vh">
+            <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+        </MudContainer>
+    }
+    else
+    {
+        <!-- Machines Grid -->
+        <MudGrid>
+            @foreach (var machine in filteredMachines)
+            {
+                <MudItem xs="12" sm="6" md="4" lg="3">
+                    <MudCard Class="machine-card" Style="height: 100%;">
+                        <MudCardContent>
+                            <div class="d-flex justify-space-between align-center mb-3">
+                                <MudText Typo="Typo.h6">@machine.MachineName</MudText>
+                                <MudChip Color="@(machine.IsOnline ? Color.Success : Color.Error)" Size="Size.Small">
+                                    @(machine.IsOnline ? "Online" : "Offline")
+                                </MudChip>
+                            </div>
+                            
+                            <MudText Typo="Typo.body2" Class="mb-2">
+                                <strong>ID:</strong> @machine.MachineId
+                            </MudText>
+                            <MudText Typo="Typo.body2" Class="mb-2">
+                                <strong>Type:</strong> @machine.MachineType
+                            </MudText>
+                            <MudText Typo="Typo.body2" Class="mb-2">
+                                <strong>Location:</strong> @machine.Location
+                            </MudText>
+                            <MudText Typo="Typo.body2" Class="mb-2">
+                                <strong>Status:</strong> @machine.Status
+                            </MudText>
+                            
+                            @if (machine.LastHeartbeat.HasValue)
+                            {
+                                <MudText Typo="Typo.caption" Class="text--secondary">
+                                    Last seen: @machine.LastHeartbeat.Value.ToString("yyyy-MM-dd HH:mm:ss")
+                                </MudText>
+                            }
+                            
+                            @if (machine.Uptime.HasValue)
+                            {
+                                <MudText Typo="Typo.caption" Class="text--secondary">
+                                    Uptime: @FormatUptime(machine.Uptime.Value)
+                                </MudText>
+                            }
+                        </MudCardContent>
+                        
+                        <MudCardActions>
+                            <MudButton Size="Size.Small" 
+                                       Color="Color.Primary" 
+                                       StartIcon="@Icons.Material.Filled.Visibility"
+                                       OnClick="() => ViewDetails(machine.MachineId)">
+                                Details
+                            </MudButton>
+                            <MudButton Size="Size.Small" 
+                                       Color="Color.Info" 
+                                       StartIcon="@Icons.Material.Filled.Edit"
+                                       OnClick="() => EditMachine(machine)">
+                                Edit
+                            </MudButton>
+                            <MudButton Size="Size.Small" 
+                                       Color="Color.Error" 
+                                       StartIcon="@Icons.Material.Filled.Delete"
+                                       OnClick="() => DeleteMachine(machine.MachineId)">
+                                Delete
+                            </MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+
+        @if (!machines.Any())
+        {
+            <MudAlert Severity="Severity.Info" Class="mt-4">
+                No machines found. Click "Add Machine" to create your first machine.
+            </MudAlert>
+        }
+        else if (!filteredMachines.Any())
+        {
+            <MudAlert Severity="Severity.Warning" Class="mt-4">
+                No machines match the current filters. Try adjusting your search criteria.
+            </MudAlert>
+        }
+    }
+</MudContainer>
+
+@code {
+    private List<MachineDto> machines = new();
+    private List<MachineDto> filteredMachines = new();
+    private bool isLoading = true;
+    private string searchTerm = "";
+    private string statusFilter = "";
+    private string typeFilter = "";
+    private HubConnection? hubConnection;
+    private Timer? refreshTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMachines();
+        await InitializeSignalR();
+        StartPeriodicRefresh();
+    }
+
+    private async Task LoadMachines()
+    {
+        try
+        {
+            isLoading = true;
+            machines = (await MachineService.GetAllMachinesAsync()).ToList();
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading machines");
+            Snackbar.Add("Error loading machines", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        filteredMachines = machines.Where(m =>
+        {
+            var matchesSearch = string.IsNullOrWhiteSpace(searchTerm) ||
+                               m.MachineName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                               m.MachineId.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                               m.Location.Contains(searchTerm, StringComparison.OrdinalIgnoreCase);
+
+            var matchesStatus = string.IsNullOrWhiteSpace(statusFilter) ||
+                               (statusFilter == "online" && m.IsOnline) ||
+                               (statusFilter == "offline" && !m.IsOnline);
+
+            var matchesType = string.IsNullOrWhiteSpace(typeFilter) ||
+                             m.MachineType.Equals(typeFilter, StringComparison.OrdinalIgnoreCase);
+
+            return matchesSearch && matchesStatus && matchesType;
+        }).ToList();
+        
+        StateHasChanged();
+    }
+
+    private void OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            ApplyFilters();
+        }
+    }
+
+    private async Task OpenCreateDialog()
+    {
+        var parameters = new DialogParameters();
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        
+        var dialog = await DialogService.ShowAsync<MachineDialog>("Add Machine", parameters, options);
+        var result = await dialog.Result;
+        
+        if (!result.Canceled)
+        {
+            await LoadMachines();
+            Snackbar.Add("Machine added successfully", Severity.Success);
+        }
+    }
+
+    private async Task EditMachine(MachineDto machine)
+    {
+        var parameters = new DialogParameters { ["Machine"] = machine };
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        
+        var dialog = await DialogService.ShowAsync<MachineDialog>("Edit Machine", parameters, options);
+        var result = await dialog.Result;
+        
+        if (!result.Canceled)
+        {
+            await LoadMachines();
+            Snackbar.Add("Machine updated successfully", Severity.Success);
+        }
+    }
+
+    private async Task DeleteMachine(string machineId)
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Confirm Delete",
+            $"Are you sure you want to delete machine {machineId}?",
+            yesText: "Delete",
+            cancelText: "Cancel");
+
+        if (confirmed == true)
+        {
+            try
+            {
+                var success = await MachineService.DeleteMachineAsync(machineId);
+                if (success)
+                {
+                    await LoadMachines();
+                    Snackbar.Add("Machine deleted successfully", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("Failed to delete machine", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error deleting machine {MachineId}", machineId);
+                Snackbar.Add("Error deleting machine", Severity.Error);
+            }
+        }
+    }
+
+    private void ViewDetails(string machineId)
+    {
+        // Navigate to machine details page
+        // Navigation.NavigateTo($"/machines/{machineId}");
+        Snackbar.Add($"Navigate to details for {machineId}", Severity.Info);
+    }
+
+    private async Task InitializeSignalR()
+    {
+        try
+        {
+            hubConnection = new HubConnectionBuilder()
+                .WithUrl("/machinehub")
+                .Build();
+
+            hubConnection.On<IList<MachineDto>>("MachineStatusUpdate", async (updatedMachines) =>
+            {
+                machines = updatedMachines.ToList();
+                ApplyFilters();
+                await InvokeAsync(StateHasChanged);
+            });
+
+            await hubConnection.StartAsync();
+            await hubConnection.SendAsync("SubscribeToMachineUpdates");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error initializing SignalR connection");
+        }
+    }
+
+    private void StartPeriodicRefresh()
+    {
+        refreshTimer = new Timer(async _ =>
+        {
+            await LoadMachines();
+        }, null, TimeSpan.Zero, TimeSpan.FromMinutes(2));
+    }
+
+    private static string FormatUptime(TimeSpan uptime)
+    {
+        if (uptime.TotalDays >= 1)
+            return $"{(int)uptime.TotalDays}d {uptime.Hours}h {uptime.Minutes}m";
+        if (uptime.TotalHours >= 1)
+            return $"{uptime.Hours}h {uptime.Minutes}m";
+        return $"{uptime.Minutes}m {uptime.Seconds}s";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        refreshTimer?.Dispose();
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}
