@@ -1,0 +1,302 @@
+/* Custom styles for Machine Management System */
+
+html, body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f5f5f5;
+}
+
+.page {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.main {
+    flex: 1;
+}
+
+.sidebar {
+    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+}
+
+.content {
+    flex: 1;
+}
+
+.navbar-toggler {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.top-row {
+    background-color: #f7f7f7;
+    border-bottom: 1px solid #d6d5d5;
+    justify-content: flex-end;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.top-row ::deep a, .top-row .btn-link {
+    white-space: nowrap;
+    margin-left: 1.5rem;
+}
+
+.top-row a:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Machine status indicators */
+.machine-status-online {
+    color: #4caf50;
+}
+
+.machine-status-offline {
+    color: #f44336;
+}
+
+.machine-status-warning {
+    color: #ff9800;
+}
+
+.machine-status-error {
+    color: #d32f2f;
+}
+
+/* Dashboard cards */
+.dashboard-card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Log viewer */
+.log-message {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    word-break: break-all;
+}
+
+.log-level-error {
+    background-color: #ffebee;
+    border-left: 4px solid #f44336;
+}
+
+.log-level-warning {
+    background-color: #fff8e1;
+    border-left: 4px solid #ff9800;
+}
+
+.log-level-info {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196f3;
+}
+
+.log-level-debug {
+    background-color: #f3e5f5;
+    border-left: 4px solid #9c27b0;
+}
+
+/* Command status indicators */
+.command-status-pending {
+    color: #ff9800;
+}
+
+.command-status-executing {
+    color: #2196f3;
+}
+
+.command-status-completed {
+    color: #4caf50;
+}
+
+.command-status-failed {
+    color: #f44336;
+}
+
+.command-status-cancelled {
+    color: #9e9e9e;
+}
+
+/* Activity log styling */
+.activity-log {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.activity-item {
+    padding: 8px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+/* Machine card styling */
+.machine-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.machine-card.online {
+    border-left-color: #4caf50;
+}
+
+.machine-card.offline {
+    border-left-color: #f44336;
+}
+
+.machine-card:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Statistics cards */
+.stat-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+}
+
+.stat-card h3 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 300;
+}
+
+.stat-card p {
+    margin: 5px 0 0 0;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+/* Error UI */
+#blazor-error-ui {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}
+
+/* Loading animations */
+.loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+}
+
+.pulse {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* Responsive design */
+@media (max-width: 641.98px) {
+    .top-row:not(.auth) {
+        display: none;
+    }
+
+    .top-row.auth {
+        justify-content: space-between;
+    }
+
+    .top-row a, .top-row .btn-link {
+        margin-left: 0;
+    }
+}
+
+@media (min-width: 641.99px) {
+    .page {
+        flex-direction: row;
+    }
+
+    .sidebar {
+        width: 250px;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+    }
+
+    .top-row {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    .content {
+        flex: 1;
+    }
+
+    .navbar-toggler {
+        display: none;
+    }
+
+    .sidebar .collapse {
+        display: block;
+    }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Print styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .sidebar {
+        display: none;
+    }
+    
+    .content {
+        margin: 0;
+        padding: 0;
+    }
+}
