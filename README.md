@@ -1,170 +1,223 @@
 # Machine Management System
 
-> Hệ thống quản lý máy móc với Desktop Client (WPF), Web Manager (Blazor) và Backend API (ASP.NET Core)
+> **🏭 Hệ thống quản lý máy móc sản xuất với thu thập log và điều khiển từ xa**
 
 ## 🚀 Tổng quan hệ thống
 
-### Mô tả ngắn gọn:
+**✅ BACKEND API HOÀN THÀNH - READY FOR TESTING**
+**✅ WPF DESKTOP CLIENT HOÀN THÀNH - READY FOR TESTING**
+
+### Mô tả kiến trúc:
 ```
-[Client Apps]  →  Gửi Log  →  [Server API]  ←  Xem & Điều khiển  ←  [Manager Web]
-      ↓                         ↓                                      ↓
-  [Log Files]              [Database]                           [Commands] 
-  [App khác]                                                        
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   CLIENT APP    │    │   BACKEND API    │    │  MANAGER WEB    │
+│   (WPF Desktop) │◄──►│  (.NET 8 Core)   │◄──►│ (Blazor Server) │
+│       ✅        │    │       ✅         │    │   (Coming)      │
+│ - Log Collection│    │ - REST APIs      │    │ - Dashboard     │
+│ - Command Exec  │    │ - Business Logic │    │ - Management    │
+│ - Config Sync   │    │ - Data Access    │    │ - Reporting     │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+                                │
+                                ▼
+                       ┌──────────────────┐
+                       │   MySQL DATABASE │
+                       │ machine_mgmt_db  │
+                       │       ✅         │
+                       └──────────────────┘
 ```
 
 ### 3 thành phần chính:
-1. **Client App** (Windows Desktop - WPF):
+1. **✅ Client App** (Windows Desktop - WPF):
    - Tự động đọc log files từ máy production
-   - Gửi data lên server API
+   - Gửi data lên server API với batch processing
    - Nhận lệnh và điều khiển ứng dụng khác
-   - Sử dụng: WPF, MVVM, Material Design
+   - Material Design UI với real-time monitoring
+   - Sử dụng: WPF, MVVM, Material Design, Dependency Injection
 
-2. **Backend API** (.NET Core Web API):
-   - Nhận log từ clients
-   - Lưu vào MySQL database  
+2. **✅ Backend API** (.NET 8 Web API):
+   - Nhận log từ clients với RESTful endpoints
+   - Lưu vào MySQL database với EF Core
    - Quản lý commands và client registry
-   - Sử dụng: ASP.NET Core, EF Core, Repository Pattern
+   - Health checks, Swagger documentation, CORS
+   - Sử dụng: ASP.NET Core, EF Core, Repository Pattern, Clean Architecture
 
-3. **Manager Web** (Blazor Server):
+3. **🔄 Manager Web** (Blazor Server - Coming Soon):
    - Dashboard xem clients và log data
    - Gửi lệnh điều khiển từ xa
-   - Quản lý cấu hình hệ thống
-   - Sử dụng: Blazor Server, Material Design
+   - Báo cáo và analytics
+   - Sử dụng: Blazor Server, SignalR, Material Design
 
-## 📁 Cấu trúc dự án
+## 🛠️ Tech Stack
 
-```
-📦 machine-management-system/
-├── 📁 .github/                    # GitHub Actions workflows & instructions
-├── 📁 SRS_Documents/              # Software Requirements Specification
-├── 📁 src/
-│   ├── 📁 ClientApp/              # WPF Desktop Client
-│   ├── 📁 Backend/                # ASP.NET Core Web API  
-│   ├── 📁 ManagerApp/             # Blazor Server Web App
-│   └── 📁 Database/               # SQL Scripts & Migrations
-├── 📁 docs/                       # Technical documentation
-├── 📁 tests/                      # Unit & Integration tests
-└── 📄 README.md
-```
+### Backend (.NET 8)
+- **Framework**: ASP.NET Core Web API
+- **Database**: MySQL với Entity Framework Core
+- **Architecture**: Clean Architecture, Repository Pattern
+- **Features**: Swagger, Health Checks, CORS, Structured Logging
+- **ORM**: Entity Framework Core với Code-First approach
 
-## 🛠️ Công nghệ sử dụng
+### Desktop Client (WPF)
+- **Framework**: WPF với .NET 8
+- **Pattern**: MVVM với CommunityToolkit.Mvvm
+- **UI**: Material Design trong WPF
+- **DI**: Microsoft.Extensions.DependencyInjection
+- **HTTP**: HttpClient với System.Net.Http.Json
+- **Logging**: Microsoft.Extensions.Logging
 
-### Backend & API
-- **.NET 8** - Framework chính
-- **ASP.NET Core Web API** - REST API services
-- **Entity Framework Core** - ORM và database migrations
-- **MySQL** - Database chính
-- **Serilog** - Logging framework
-- **AutoMapper** - DTO mapping
+### Database
+- **Engine**: MySQL 8.0+
+- **Structure**: Hierarchical production management
+- **Features**: Log partitioning, stored procedures, views
+- **Support**: Multiple buyers (BMW, Audi, VW, Mercedes)
 
-### Desktop Client
-- **WPF** - Windows Presentation Foundation
-- **MVVM Pattern** - với CommunityToolkit.Mvvm
-- **Material Design** - MaterialDesignInXamlToolkit
-- **Dependency Injection** - Microsoft.Extensions.DependencyInjection
+## 🚀 Quick Start
 
-### Web Manager
-- **Blazor Server** - Server-side Blazor
-- **MudBlazor** - Material Design UI components
-- **SignalR** - Real-time communication
+### Yêu cầu hệ thống
 
-### DevOps
-- **GitHub Actions** - CI/CD pipeline
-- **Docker** - Containerization
-- **xUnit** - Unit testing framework
+- **.NET 8 SDK** - [Download](https://dotnet.microsoft.com/download/dotnet/8.0)
+- **MySQL Server 8.0+** - [Download](https://dev.mysql.com/downloads/mysql/)
+- **Visual Studio 2022** hoặc **VS Code** - [Download](https://visualstudio.microsoft.com/)
+- **Git** - [Download](https://git-scm.com/)
 
-## 📋 Yêu cầu hệ thống
+### Cài đặt và chạy
 
-### Development
-- Visual Studio 2022 hoặc VS Code
-- .NET 8 SDK
-- MySQL Server 8.0+
-- Git
-
-### Production
-- Windows Server 2019+ (cho Client Apps)
-- Linux/Windows Server (cho Backend API)
-- MySQL Server 8.0+
-- IIS hoặc Docker
-
-## 🚀 Bắt đầu phát triển
-
-### 1. Clone repository
+#### 1. Clone repository
 ```bash
 git clone https://github.com/thanhnvbk92/machine-management-system.git
 cd machine-management-system
 ```
 
-### 2. Setup Database
-```bash
-# Tạo database từ script
-mysql -u root -p < src/Database/init_database.sql
+#### 2. Cài đặt database
+```powershell
+# Tạo database và bảng
+.\setup-database.ps1 -Username "root" -Password "your_password"
 
-# Hoặc dùng EF migrations
-cd src/Backend
-dotnet ef database update
+# Thêm dữ liệu mẫu
+.\setup-database.ps1 -Action seed -Username "root" -Password "your_password"
 ```
 
-### 3. Chạy Backend API
-```bash
-cd src/Backend
-dotnet run
+#### 3. Cấu hình connection string
+Chỉnh sửa `src/Backend/MachineManagement.API/appsettings.Development.json`:
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=machine_management_db;Uid=root;Pwd=your_password;Port=3306;CharSet=utf8mb4;"
+  }
+}
 ```
 
-### 4. Chạy Manager Web
-```bash
-cd src/ManagerApp  
-dotnet run
+#### 4. Chạy Backend API
+```powershell
+# Build và chạy API server
+.\run-backend.ps1
+
+# Hoặc chạy trực tiếp
+dotnet run --project src/Backend/MachineManagement.API
 ```
 
-### 5. Build Client App
-```bash
-cd src/ClientApp
+#### 5. Truy cập Swagger UI
+Mở trình duyệt và truy cập: **https://localhost:5001**
+
+#### 6. Chạy WPF Desktop Client
+```powershell
+cd src/ClientApp/MachineClient.WPF
+dotnet restore
 dotnet build
+dotnet run
 ```
 
-## 📚 Tài liệu
+## 📊 Tính năng hiện tại
 
-- [📖 Software Requirements](SRS_Documents/README.md)
-- [🏗️ Architecture Overview](docs/architecture.md)
-- [📋 API Documentation](docs/api.md)
-- [🎨 UI Design Guidelines](docs/ui-guidelines.md)
-- [⚙️ Deployment Guide](docs/deployment.md)
+### Backend API
+- ✅ **Machine Registration**: Đăng ký và quản lý máy móc
+- ✅ **Log Collection**: Thu thập logs theo batch với optimization
+- ✅ **Heartbeat Monitoring**: Giám sát trạng thái máy real-time
+- ✅ **Command Management**: Gửi và theo dõi lệnh điều khiển
+- ✅ **Health Checks**: Endpoint kiểm tra sức khỏe hệ thống
+- ✅ **Swagger Documentation**: API documentation đầy đủ
+- ✅ **CORS Support**: Cross-origin resource sharing
+- ✅ **Structured Logging**: Logging với Serilog
 
-## 🧪 Testing
+### WPF Desktop Client
+- ✅ **Material Design UI**: Giao diện đẹp với Material Design
+- ✅ **Real-time Dashboard**: Hiển thị metrics và status live
+- ✅ **Auto Log Collection**: Tự động đọc và parse log files
+- ✅ **Configuration Management**: Quản lý settings với JSON
+- ✅ **Connection Monitoring**: Theo dõi kết nối API server
+- ✅ **Command Execution**: Nhận và thực thi lệnh từ xa
+- ✅ **MVVM Pattern**: Kiến trúc MVVM với data binding
+- ✅ **Dependency Injection**: DI container với services
 
-```bash
-# Chạy tất cả tests
-dotnet test
+### Database
+- ✅ **Hierarchical Structure**: BUYERS→LINES→STATIONS→MACHINES
+- ✅ **Log Partitioning**: Phân vùng logs theo tháng
+- ✅ **Stored Procedures**: Procedures cho operations phức tạp
+- ✅ **Views**: Views cho reporting và analytics
+- ✅ **Sample Data**: Dữ liệu mẫu cho testing
 
-# Test coverage report
-dotnet test --collect:"XPlat Code Coverage"
+## 📁 Cấu trúc project
+
+```
+machine-management-system/
+├── src/
+│   ├── Backend/                     # Backend API (.NET 8)
+│   │   ├── MachineManagement.Core/  # Domain entities, interfaces
+│   │   ├── MachineManagement.Infrastructure/ # Data access, repositories
+│   │   └── MachineManagement.API/   # Web API controllers, middleware
+│   ├── ClientApp/                   # Desktop WPF Client
+│   │   └── MachineClient.WPF/       # WPF app với Material Design
+│   └── ManagerApp/                  # Web Manager (Coming)
+├── SRS_Documents/                   # System Requirements Specification
+├── .github/
+│   └── workflows/                   # GitHub Actions CI/CD
+├── setup-database.ps1               # Database setup script
+├── run-backend.ps1                  # Backend run script
+└── README.md
 ```
 
-## 🔄 CI/CD Pipeline
+## 🔄 Roadmap
 
-GitHub Actions workflow bao gồm:
-1. **Build** - Build tất cả projects
-2. **Test** - Chạy unit tests & integration tests  
-3. **Database Migration** - EF Core migrations
-4. **Deploy** - Docker containers deployment
+### Phase 2: Manager Web Application (Next)
+- [ ] Blazor Server web application
+- [ ] Dashboard với real-time data
+- [ ] Machine management interface
+- [ ] Command center cho remote control
+- [ ] Reporting và analytics
+- [ ] User authentication và authorization
 
-## 🤝 Đóng góp
+### Phase 3: Advanced Features
+- [ ] Machine learning cho log analysis
+- [ ] Predictive maintenance alerts
+- [ ] Mobile app support
+- [ ] Multi-tenant support
+- [ ] Advanced reporting với charts
+- [ ] Integration với third-party systems
+
+### Phase 4: DevOps & Production
+- [ ] Docker containerization
+- [ ] Kubernetes deployment
+- [ ] CI/CD pipeline hoàn chỉnh
+- [ ] Monitoring và alerting
+- [ ] Load balancing
+- [ ] Security hardening
+
+## 🤝 Contributing
 
 1. Fork repository
-2. Tạo feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Tạo Pull Request
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
 
-## 📄 License
+## 📝 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
 ## 📞 Contact
 
-**Developer**: thanhnvbk92
-**Project Link**: https://github.com/thanhnvbk92/machine-management-system
+- **GitHub**: [@thanhnvbk92](https://github.com/thanhnvbk92)
+- **Repository**: [machine-management-system](https://github.com/thanhnvbk92/machine-management-system)
 
 ---
-*Được tạo với ❤️ bởi GitHub Copilot*
+
+> **💡 Tip**: Để test hệ thống nhanh chóng, hãy chạy Backend API trước, sau đó mở WPF Client và click "Start Services"!
