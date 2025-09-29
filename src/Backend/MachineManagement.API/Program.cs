@@ -27,10 +27,19 @@ builder.Services.AddControllers();
 
 // Database configuration
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? "Server=localhost;Database=MachineManagementDB;Uid=root;Pwd=password;";
+    ?? "Data Source=machine_management.db";
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+{
+    if (connectionString.Contains("Data Source="))
+    {
+        options.UseSqlite(connectionString);
+    }
+    else
+    {
+        options.UseInMemoryDatabase("MachineManagementDB");
+    }
+});
 
 // Register repositories and services
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
