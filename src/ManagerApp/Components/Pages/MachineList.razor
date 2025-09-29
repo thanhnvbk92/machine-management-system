@@ -1,0 +1,497 @@
+@page "/machines"
+@using Microsoft.AspNetCore.SignalR.Client
+@implements IAsyncDisposable
+@inject IMachineService MachineService
+@inject ICommandService CommandService
+@inject IJSRuntime JSRuntime
+@inject ILogger<MachineList> Logger
+
+<PageTitle>Machine List - Machine Management System</PageTitle>
+
+<div class="d-flex justify-space-between align-center mb-4">
+    <MudText Typo="Typo.h4">Machine Management</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
+               Href="/machines/add">
+        Add Machine
+    </MudButton>
+</div>
+
+<!-- Search and Filter Bar -->
+<MudGrid Class="mb-4">
+    <MudItem xs="12" md="6">
+        <MudTextField @bind-Value="_searchTerm" Label="Search machines..." Variant="Variant.Outlined" 
+                      Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search"
+                      OnKeyPress="OnSearchKeyPress" />
+    </MudItem>
+    <MudItem xs="12" md="3">
+        <MudSelect @bind-Value="_statusFilter" Label="Status Filter" Variant="Variant.Outlined">
+            <MudSelectItem Value="@("")">All Status</MudSelectItem>
+            <MudSelectItem Value="@("Online")">Online</MudSelectItem>
+            <MudSelectItem Value="@("Offline")">Offline</MudSelectItem>
+            <MudSelectItem Value="@("Error")">Error</MudSelectItem>
+        </MudSelect>
+    </MudItem>
+    <MudItem xs="12" md="3" Class="d-flex align-center gap-2">
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="RefreshMachines"
+                   StartIcon="@Icons.Material.Filled.Refresh">
+            Refresh
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="ExportMachines"
+                   StartIcon="@Icons.Material.Filled.FileDownload">
+            Export
+        </MudButton>
+    </MudItem>
+</MudGrid>
+
+<!-- Machine Cards Grid -->
+@if (_machines != null)
+{
+    if (_filteredMachines.Any())
+    {
+        <MudGrid>
+            @foreach (var machine in _filteredMachines)
+            {
+                <MudItem xs="12" sm="6" md="4" lg="3">
+                    <MudCard Elevation="4" Class="@($"machine-card {GetMachineStatusClass(machine)}")">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <div class="d-flex justify-space-between align-center">
+                                    <div>
+                                        <MudText Typo="Typo.h6">@machine.MachineName</MudText>
+                                        <MudText Typo="Typo.body2" Class="mud-text-secondary">@machine.MachineCode</MudText>
+                                    </div>
+                                    <MudChip Color="GetMachineStatusColor(machine)" Size="Size.Small">
+                                        @GetMachineStatus(machine)
+                                    </MudChip>
+                                </div>
+                            </CardHeaderContent>
+                            <CardHeaderActions>
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert">
+                                    <MudMenuItem OnClick="() => ViewMachineDetails(machine.MachineId)">
+                                        <div class="d-flex align-center">
+                                            <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="mr-2" />
+                                            View Details
+                                        </div>
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="() => SendCommand(machine.MachineId)">
+                                        <div class="d-flex align-center">
+                                            <MudIcon Icon="@Icons.Material.Filled.Send" Class="mr-2" />
+                                            Send Command
+                                        </div>
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="() => ViewLogs(machine.MachineId)">
+                                        <div class="d-flex align-center">
+                                            <MudIcon Icon="@Icons.Material.Filled.Assignment" Class="mr-2" />
+                                            View Logs
+                                        </div>
+                                    </MudMenuItem>
+                                    <MudDivider />
+                                    <MudMenuItem OnClick="() => EditMachine(machine.MachineId)">
+                                        <div class="d-flex align-center">
+                                            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-2" />
+                                            Edit
+                                        </div>
+                                    </MudMenuItem>
+                                </MudMenu>
+                            </CardHeaderActions>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <div class="mb-2">
+                                <MudText Typo="Typo.body2">
+                                    <strong>Type:</strong> @machine.MachineType
+                                </MudText>
+                            </div>
+                            @if (!string.IsNullOrEmpty(machine.Description))
+                            {
+                                <div class="mb-2">
+                                    <MudText Typo="Typo.body2">
+                                        @machine.Description
+                                    </MudText>
+                                </div>
+                            }
+                            <div class="d-flex justify-space-between align-center mt-3">
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                    Updated: @machine.UpdatedAt?.ToString("MM/dd HH:mm") ?? "Never"
+                                </MudText>
+                                <div class="d-flex gap-1">
+                                    @if (GetPendingCommandCount(machine.MachineId) > 0)
+                                    {
+                                        <MudChip Color="Color.Warning" Size="Size.Small">
+                                            @GetPendingCommandCount(machine.MachineId) pending
+                                        </MudChip>
+                                    }
+                                </div>
+                            </div>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButtonGroup Variant="Variant.Text" Size="Size.Small" Class="w-100">
+                                <MudButton Color="Color.Primary" OnClick="() => ViewMachineDetails(machine.MachineId)">
+                                    Details
+                                </MudButton>
+                                <MudButton Color="Color.Secondary" OnClick="() => SendCommand(machine.MachineId)">
+                                    Command
+                                </MudButton>
+                                <MudButton Color="Color.Info" OnClick="() => ViewLogs(machine.MachineId)">
+                                    Logs
+                                </MudButton>
+                            </MudButtonGroup>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+        
+        <!-- Pagination -->
+        @if (_totalPages > 1)
+        {
+            <div class="d-flex justify-center mt-4">
+                <MudPagination Count="_totalPages" @bind-Selected="_currentPage" OnClick="OnPageChanged" />
+            </div>
+        }
+    }
+    else
+    {
+        <MudContainer Class="text-center pa-8">
+            <MudIcon Icon="@Icons.Material.Filled.SearchOff" Size="Size.Large" Class="mud-text-secondary mb-4" />
+            <MudText Typo="Typo.h6" Class="mud-text-secondary">No machines found</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                @if (!string.IsNullOrEmpty(_searchTerm) || !string.IsNullOrEmpty(_statusFilter))
+                {
+                    <span>Try adjusting your search or filter criteria.</span>
+                }
+                else
+                {
+                    <span>Get started by adding your first machine.</span>
+                }
+            </MudText>
+            @if (string.IsNullOrEmpty(_searchTerm) && string.IsNullOrEmpty(_statusFilter))
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4"
+                          StartIcon="@Icons.Material.Filled.Add" Href="/machines/add">
+                    Add Machine
+                </MudButton>
+            }
+        </MudContainer>
+    }
+}
+else
+{
+    <!-- Loading State -->
+    <MudContainer Class="text-center pa-8">
+        <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+        <MudText Typo="Typo.h6" Class="mt-4">Loading Machines...</MudText>
+    </MudContainer>
+}
+
+<!-- Command Dialog -->
+<MudDialog @bind-IsVisible="_showCommandDialog" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Send" Class="mr-3" />
+            Send Command to Machine
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (_selectedMachine != null)
+        {
+            <MudText Typo="Typo.body1" Class="mb-4">
+                Target: <strong>@_selectedMachine.MachineName</strong> (@_selectedMachine.MachineCode)
+            </MudText>
+            
+            <MudForm @ref="_commandForm">
+                <MudSelect @bind-Value="_commandType" Label="Command Type" Variant="Variant.Outlined" Required="true">
+                    <MudSelectItem Value="@("Start")">Start Process</MudSelectItem>
+                    <MudSelectItem Value="@("Stop")">Stop Process</MudSelectItem>
+                    <MudSelectItem Value="@("Restart")">Restart</MudSelectItem>
+                    <MudSelectItem Value="@("Reset")">Reset</MudSelectItem>
+                    <MudSelectItem Value="@("Status")">Get Status</MudSelectItem>
+                    <MudSelectItem Value="@("Custom")">Custom Command</MudSelectItem>
+                </MudSelect>
+                
+                <MudTextField @bind-Value="_commandData" Label="Command Data" Variant="Variant.Outlined" 
+                             Lines="3" Class="mt-4" 
+                             HelperText="JSON data or parameters for the command" />
+                
+                <MudSlider @bind-Value="_commandPriority" Min="1" Max="10" Step="1" Class="mt-4"
+                          Color="Color.Primary">
+                    Priority: @_commandPriority
+                </MudSlider>
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseCommandDialog">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SendCommandToMachine"
+                   StartIcon="@Icons.Material.Filled.Send">
+            Send Command
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private HubConnection? _hubConnection;
+    private IEnumerable<Machine>? _machines;
+    private IEnumerable<Machine> _filteredMachines = new List<Machine>();
+    private Dictionary<int, int> _pendingCommands = new();
+    
+    // Search and filter
+    private string _searchTerm = string.Empty;
+    private string _statusFilter = string.Empty;
+    
+    // Pagination
+    private int _currentPage = 1;
+    private int _pageSize = 12;
+    private int _totalPages = 1;
+    
+    // Command dialog
+    private bool _showCommandDialog = false;
+    private Machine? _selectedMachine;
+    private string _commandType = "Status";
+    private string _commandData = "{}";
+    private int _commandPriority = 5;
+    private MudForm? _commandForm;
+    
+    private DialogOptions _dialogOptions = new()
+    {
+        MaxWidth = MaxWidth.Medium,
+        CloseButton = true,
+        DisableBackdropClick = true
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMachines();
+        await LoadPendingCommands();
+        await InitializeSignalR();
+    }
+
+    private async Task LoadMachines()
+    {
+        try
+        {
+            _machines = await MachineService.GetAllMachinesAsync();
+            FilterMachines();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading machines");
+        }
+    }
+
+    private async Task LoadPendingCommands()
+    {
+        try
+        {
+            if (_machines != null)
+            {
+                _pendingCommands.Clear();
+                foreach (var machine in _machines)
+                {
+                    var count = await CommandService.GetPendingCommandCountByMachineAsync(machine.MachineId);
+                    _pendingCommands[machine.MachineId] = count;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading pending commands");
+        }
+    }
+
+    private async Task InitializeSignalR()
+    {
+        try
+        {
+            _hubConnection = new HubConnectionBuilder()
+                .WithUrl("/machineHub")
+                .Build();
+
+            _hubConnection.On<int, string>("MachineStatusUpdated", (machineId, status) =>
+            {
+                InvokeAsync(() =>
+                {
+                    // Update machine status in real-time
+                    StateHasChanged();
+                });
+            });
+
+            await _hubConnection.StartAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error initializing SignalR connection");
+        }
+    }
+
+    private void FilterMachines()
+    {
+        if (_machines == null) return;
+
+        var filtered = _machines.AsQueryable();
+
+        // Apply search filter
+        if (!string.IsNullOrEmpty(_searchTerm))
+        {
+            filtered = filtered.Where(m => 
+                m.MachineName.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                m.MachineCode.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                (m.Description != null && m.Description.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        // Apply status filter (placeholder - would need actual status implementation)
+        if (!string.IsNullOrEmpty(_statusFilter))
+        {
+            // This would be implemented based on actual machine status tracking
+        }
+
+        var filteredList = filtered.ToList();
+        _totalPages = (int)Math.Ceiling((double)filteredList.Count / _pageSize);
+        
+        _filteredMachines = filteredList
+            .Skip((_currentPage - 1) * _pageSize)
+            .Take(_pageSize);
+    }
+
+    private async Task RefreshMachines()
+    {
+        await LoadMachines();
+        await LoadPendingCommands();
+        StateHasChanged();
+    }
+
+    private async Task OnSearchKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            _currentPage = 1;
+            FilterMachines();
+            StateHasChanged();
+        }
+    }
+
+    private void OnPageChanged(int page)
+    {
+        _currentPage = page;
+        FilterMachines();
+        StateHasChanged();
+    }
+
+    private void ViewMachineDetails(int machineId)
+    {
+        // Navigation would be implemented here
+        Logger.LogInformation("Viewing details for machine {MachineId}", machineId);
+    }
+
+    private void SendCommand(int machineId)
+    {
+        _selectedMachine = _machines?.FirstOrDefault(m => m.MachineId == machineId);
+        if (_selectedMachine != null)
+        {
+            _showCommandDialog = true;
+        }
+    }
+
+    private void ViewLogs(int machineId)
+    {
+        // Navigation would be implemented here
+        Logger.LogInformation("Viewing logs for machine {MachineId}", machineId);
+    }
+
+    private void EditMachine(int machineId)
+    {
+        // Navigation would be implemented here
+        Logger.LogInformation("Editing machine {MachineId}", machineId);
+    }
+
+    private async Task SendCommandToMachine()
+    {
+        if (_selectedMachine == null || _commandForm == null) return;
+
+        await _commandForm.Validate();
+        if (!_commandForm.IsValid) return;
+
+        try
+        {
+            var command = new Command
+            {
+                MachineId = _selectedMachine.MachineId,
+                CommandType = _commandType,
+                CommandData = _commandData,
+                Priority = _commandPriority
+            };
+
+            await CommandService.CreateCommandAsync(command);
+            CloseCommandDialog();
+            
+            // Refresh pending command counts
+            await LoadPendingCommands();
+            StateHasChanged();
+            
+            Logger.LogInformation("Command sent to machine {MachineId}", _selectedMachine.MachineId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error sending command to machine {MachineId}", _selectedMachine.MachineId);
+        }
+    }
+
+    private void CloseCommandDialog()
+    {
+        _showCommandDialog = false;
+        _selectedMachine = null;
+        _commandType = "Status";
+        _commandData = "{}";
+        _commandPriority = 5;
+    }
+
+    private async Task ExportMachines()
+    {
+        try
+        {
+            // This would implement CSV/Excel export functionality
+            Logger.LogInformation("Exporting machines data");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error exporting machines");
+        }
+    }
+
+    // Helper methods
+    private string GetMachineStatus(Machine machine)
+    {
+        // Placeholder implementation - would need actual status tracking
+        return "Online"; // This should be replaced with actual status logic
+    }
+
+    private Color GetMachineStatusColor(Machine machine)
+    {
+        var status = GetMachineStatus(machine);
+        return status switch
+        {
+            "Online" => Color.Success,
+            "Offline" => Color.Warning,
+            "Error" => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private string GetMachineStatusClass(Machine machine)
+    {
+        var status = GetMachineStatus(machine);
+        return status.ToLower();
+    }
+
+    private int GetPendingCommandCount(int machineId)
+    {
+        return _pendingCommands.GetValueOrDefault(machineId, 0);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hubConnection is not null)
+        {
+            await _hubConnection.DisposeAsync();
+        }
+    }
+}
