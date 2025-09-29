@@ -1,0 +1,539 @@
+@page "/commands"
+@using MachineManagement.ManagerApp.Models
+@using MachineManagement.ManagerApp.Services
+@using Microsoft.AspNetCore.SignalR.Client
+@implements IAsyncDisposable
+@inject ICommandService CommandService
+@inject IMachineService MachineService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject ILogger<Commands> Logger
+
+<PageTitle>Commands - Machine Management</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <div class="d-flex justify-space-between align-center mb-6">
+        <MudText Typo="Typo.h4">
+            <MudIcon Icon="@Icons.Material.Filled.Terminal" Class="mr-3" />
+            Command Center
+        </MudText>
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Primary" 
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="OpenCreateCommandDialog">
+            Send Command
+        </MudButton>
+    </div>
+
+    <!-- Quick Actions -->
+    <MudCard Class="pa-4 mb-4">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h6">
+                    <MudIcon Icon="@Icons.Material.Filled.Speed" Class="mr-2" />
+                    Quick Actions
+                </MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudGrid>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Success"
+                               FullWidth="true"
+                               StartIcon="@Icons.Material.Filled.PlayArrow"
+                               OnClick="() => SendQuickCommand(\"START\")"
+                               Class="mb-2">
+                        Start All
+                    </MudButton>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Error"
+                               FullWidth="true"
+                               StartIcon="@Icons.Material.Filled.Stop"
+                               OnClick="() => SendQuickCommand(\"STOP\")"
+                               Class="mb-2">
+                        Stop All
+                    </MudButton>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Warning"
+                               FullWidth="true"
+                               StartIcon="@Icons.Material.Filled.Pause"
+                               OnClick="() => SendQuickCommand(\"PAUSE\")"
+                               Class="mb-2">
+                        Pause All
+                    </MudButton>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Info"
+                               FullWidth="true"
+                               StartIcon="@Icons.Material.Filled.Refresh"
+                               OnClick="() => SendQuickCommand(\"STATUS\")"
+                               Class="mb-2">
+                        Status Check
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudCardContent>
+    </MudCard>
+
+    <!-- Filters -->
+    <MudCard Class="pa-4 mb-4">
+        <MudGrid>
+            <MudItem xs="12" md="4">
+                <MudSelect @bind-Value="selectedMachine" Label="Filter by Machine" AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem Value="@("")">All Machines</MudSelectItem>
+                    @foreach (var machine in availableMachines)
+                    {
+                        <MudSelectItem Value="@machine.MachineId">@machine.MachineName</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudSelect @bind-Value="selectedStatus" Label="Filter by Status" AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem Value="@("")">All Status</MudSelectItem>
+                    <MudSelectItem Value="Pending">Pending</MudSelectItem>
+                    <MudSelectItem Value="Executing">Executing</MudSelectItem>
+                    <MudSelectItem Value="Completed">Completed</MudSelectItem>
+                    <MudSelectItem Value="Failed">Failed</MudSelectItem>
+                    <MudSelectItem Value="Cancelled">Cancelled</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudSelect @bind-Value="selectedCommandType" Label="Filter by Type" AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem Value="@("")">All Types</MudSelectItem>
+                    <MudSelectItem Value="START">Start</MudSelectItem>
+                    <MudSelectItem Value="STOP">Stop</MudSelectItem>
+                    <MudSelectItem Value="PAUSE">Pause</MudSelectItem>
+                    <MudSelectItem Value="RESUME">Resume</MudSelectItem>
+                    <MudSelectItem Value="STATUS">Status</MudSelectItem>
+                    <MudSelectItem Value="RESET">Reset</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           FullWidth="true"
+                           StartIcon="@Icons.Material.Filled.FilterList"
+                           OnClick="ApplyFilters">
+                    Filter
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudCard>
+
+    @if (isLoading)
+    {
+        <MudContainer Class="d-flex justify-center align-center" Style="height: 50vh">
+            <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+        </MudContainer>
+    }
+    else
+    {
+        <!-- Commands Table -->
+        <MudCard>
+            <MudCardContent>
+                <MudTable Items="@filteredCommands" 
+                         Dense="true" 
+                         Hover="true" 
+                         FixedHeader="true"
+                         Height="600px"
+                         Loading="@isLoading"
+                         LoadingProgressColor="Color.Info">
+                    <HeaderContent>
+                        <MudTh>ID</MudTh>
+                        <MudTh>Command</MudTh>
+                        <MudTh>Machine</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh>Created</MudTh>
+                        <MudTh>Executed</MudTh>
+                        <MudTh>Duration</MudTh>
+                        <MudTh>Result</MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="ID">@context.Id</MudTd>
+                        <MudTd DataLabel="Command">
+                            <MudChip Size="Size.Small" 
+                                     Color="@GetCommandTypeColor(context.CommandType)"
+                                     Variant="Variant.Outlined">
+                                <MudIcon Icon="@GetCommandTypeIcon(context.CommandType)" Size="Size.Small" Class="mr-1" />
+                                @context.CommandType
+                            </MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="Machine">
+                            <MudChip Size="Size.Small" Variant="Variant.Text">
+                                @context.MachineId
+                            </MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="Status">
+                            <MudChip Color="@GetStatusColor(context.Status)" Size="Size.Small">
+                                <MudIcon Icon="@GetStatusIcon(context.Status)" Size="Size.Small" Class="mr-1" />
+                                @context.Status
+                            </MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="Created">
+                            @context.CreatedAt.ToString("MM-dd HH:mm:ss")
+                        </MudTd>
+                        <MudTd DataLabel="Executed">
+                            @(context.ExecutedAt?.ToString("MM-dd HH:mm:ss") ?? "-")
+                        </MudTd>
+                        <MudTd DataLabel="Duration">
+                            @if (context.ExecutedAt.HasValue)
+                            {
+                                @((context.ExecutedAt.Value - context.CreatedAt).TotalSeconds.ToString("F1"))s
+                            }
+                            else
+                            {
+                                <span>-</span>
+                            }
+                        </MudTd>
+                        <MudTd DataLabel="Result">
+                            @if (!string.IsNullOrEmpty(context.Result))
+                            {
+                                @if (context.Result.Length > 30)
+                                {
+                                    <MudTooltip Text="@context.Result">
+                                        <span>@context.Result.Substring(0, 30)...</span>
+                                    </MudTooltip>
+                                }
+                                else
+                                {
+                                    @context.Result
+                                }
+                            }
+                            else
+                            {
+                                <span>-</span>
+                            }
+                        </MudTd>
+                        <MudTd DataLabel="Actions">
+                            @if (context.Status == "Pending")
+                            {
+                                <MudButton Size="Size.Small" 
+                                           Color="Color.Error" 
+                                           Variant="Variant.Text"
+                                           StartIcon="@Icons.Material.Filled.Cancel"
+                                           OnClick="() => CancelCommand(context.Id)">
+                                    Cancel
+                                </MudButton>
+                            }
+                            else
+                            {
+                                <MudButton Size="Size.Small" 
+                                           Color="Color.Primary" 
+                                           Variant="Variant.Text"
+                                           StartIcon="@Icons.Material.Filled.Visibility"
+                                           OnClick="() => ViewCommandDetails(context)">
+                                    View
+                                </MudButton>
+                            }
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudCardContent>
+        </MudCard>
+
+        @if (!commands.Any())
+        {
+            <MudAlert Severity="Severity.Info" Class="mt-4">
+                No commands found. Click "Send Command" to create your first command.
+            </MudAlert>
+        }
+        else if (!filteredCommands.Any())
+        {
+            <MudAlert Severity="Severity.Warning" Class="mt-4">
+                No commands match the current filters. Try adjusting your filter criteria.
+            </MudAlert>
+        }
+    }
+</MudContainer>
+
+@code {
+    private List<CommandDto> commands = new();
+    private List<CommandDto> filteredCommands = new();
+    private List<MachineDto> availableMachines = new();
+    private bool isLoading = true;
+    
+    // Filters
+    private string selectedMachine = "";
+    private string selectedStatus = "";
+    private string selectedCommandType = "";
+    
+    // SignalR
+    private HubConnection? hubConnection;
+    private Timer? refreshTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMachines();
+        await LoadCommands();
+        await InitializeSignalR();
+        StartPeriodicRefresh();
+    }
+
+    private async Task LoadMachines()
+    {
+        try
+        {
+            availableMachines = (await MachineService.GetAllMachinesAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading machines");
+        }
+    }
+
+    private async Task LoadCommands()
+    {
+        try
+        {
+            isLoading = true;
+            commands = (await CommandService.GetCommandsAsync()).OrderByDescending(c => c.CreatedAt).ToList();
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading commands");
+            Snackbar.Add("Error loading commands", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        filteredCommands = commands.Where(c =>
+        {
+            var matchesMachine = string.IsNullOrEmpty(selectedMachine) || c.MachineId.Equals(selectedMachine, StringComparison.OrdinalIgnoreCase);
+            var matchesStatus = string.IsNullOrEmpty(selectedStatus) || c.Status.Equals(selectedStatus, StringComparison.OrdinalIgnoreCase);
+            var matchesType = string.IsNullOrEmpty(selectedCommandType) || c.CommandType.Equals(selectedCommandType, StringComparison.OrdinalIgnoreCase);
+            
+            return matchesMachine && matchesStatus && matchesType;
+        }).ToList();
+        
+        StateHasChanged();
+    }
+
+    private async Task OpenCreateCommandDialog()
+    {
+        var parameters = new DialogParameters { ["Machines"] = availableMachines };
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        
+        var dialog = await DialogService.ShowAsync<CommandDialog>("Send Command", parameters, options);
+        var result = await dialog.Result;
+        
+        if (!result.Canceled)
+        {
+            await LoadCommands();
+            Snackbar.Add("Command sent successfully", Severity.Success);
+        }
+    }
+
+    private async Task SendQuickCommand(string commandType)
+    {
+        var onlineMachines = availableMachines.Where(m => m.IsOnline).ToList();
+        if (!onlineMachines.Any())
+        {
+            Snackbar.Add("No online machines available", Severity.Warning);
+            return;
+        }
+
+        var confirmed = await DialogService.ShowMessageBox(
+            "Confirm Quick Action",
+            $"Send {commandType} command to {onlineMachines.Count} online machines?",
+            yesText: "Send",
+            cancelText: "Cancel");
+
+        if (confirmed == true)
+        {
+            try
+            {
+                var tasks = onlineMachines.Select(async machine =>
+                {
+                    var request = new CreateCommandRequest
+                    {
+                        MachineId = machine.MachineId,
+                        CommandType = commandType,
+                        Parameters = "{}"
+                    };
+                    return await CommandService.CreateCommandAsync(request);
+                });
+
+                await Task.WhenAll(tasks);
+                await LoadCommands();
+                Snackbar.Add($"{commandType} commands sent to {onlineMachines.Count} machines", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error sending quick commands");
+                Snackbar.Add("Error sending commands", Severity.Error);
+            }
+        }
+    }
+
+    private async Task CancelCommand(long commandId)
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Confirm Cancel",
+            "Are you sure you want to cancel this command?",
+            yesText: "Cancel Command",
+            cancelText: "Keep Command");
+
+        if (confirmed == true)
+        {
+            try
+            {
+                var success = await CommandService.UpdateCommandStatusAsync(commandId, "Cancelled", "Cancelled by user");
+                if (success)
+                {
+                    await LoadCommands();
+                    Snackbar.Add("Command cancelled successfully", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("Failed to cancel command", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error cancelling command {CommandId}", commandId);
+                Snackbar.Add("Error cancelling command", Severity.Error);
+            }
+        }
+    }
+
+    private async Task ViewCommandDetails(CommandDto command)
+    {
+        var message = $"Command Details:\n\n" +
+                     $"ID: {command.Id}\n" +
+                     $"Type: {command.CommandType}\n" +
+                     $"Machine: {command.MachineId}\n" +
+                     $"Status: {command.Status}\n" +
+                     $"Created: {command.CreatedAt:yyyy-MM-dd HH:mm:ss}\n";
+        
+        if (command.ExecutedAt.HasValue)
+        {
+            message += $"Executed: {command.ExecutedAt:yyyy-MM-dd HH:mm:ss}\n";
+            message += $"Duration: {(command.ExecutedAt.Value - command.CreatedAt).TotalSeconds:F1}s\n";
+        }
+        
+        if (!string.IsNullOrEmpty(command.Parameters))
+        {
+            message += $"\nParameters: {command.Parameters}\n";
+        }
+        
+        if (!string.IsNullOrEmpty(command.Result))
+        {
+            message += $"\nResult: {command.Result}";
+        }
+
+        await DialogService.ShowMessageBox("Command Details", message, "Close");
+    }
+
+    private async Task InitializeSignalR()
+    {
+        try
+        {
+            hubConnection = new HubConnectionBuilder()
+                .WithUrl("/machinehub")
+                .Build();
+
+            hubConnection.On<CommandDto>("CommandStatusUpdate", async (updatedCommand) =>
+            {
+                var existingCommand = commands.FirstOrDefault(c => c.Id == updatedCommand.Id);
+                if (existingCommand != null)
+                {
+                    var index = commands.IndexOf(existingCommand);
+                    commands[index] = updatedCommand;
+                    ApplyFilters();
+                    await InvokeAsync(StateHasChanged);
+                }
+            });
+
+            await hubConnection.StartAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error initializing SignalR connection");
+        }
+    }
+
+    private void StartPeriodicRefresh()
+    {
+        refreshTimer = new Timer(async _ =>
+        {
+            await LoadCommands();
+        }, null, TimeSpan.Zero, TimeSpan.FromMinutes(1));
+    }
+
+    private static Color GetStatusColor(string status)
+    {
+        return status.ToLower() switch
+        {
+            "pending" => Color.Warning,
+            "executing" => Color.Info,
+            "completed" => Color.Success,
+            "failed" => Color.Error,
+            "cancelled" => Color.Default,
+            _ => Color.Default
+        };
+    }
+
+    private static string GetStatusIcon(string status)
+    {
+        return status.ToLower() switch
+        {
+            "pending" => Icons.Material.Filled.Schedule,
+            "executing" => Icons.Material.Filled.PlayArrow,
+            "completed" => Icons.Material.Filled.CheckCircle,
+            "failed" => Icons.Material.Filled.Error,
+            "cancelled" => Icons.Material.Filled.Cancel,
+            _ => Icons.Material.Filled.Help
+        };
+    }
+
+    private static Color GetCommandTypeColor(string commandType)
+    {
+        return commandType.ToUpper() switch
+        {
+            "START" => Color.Success,
+            "STOP" => Color.Error,
+            "PAUSE" => Color.Warning,
+            "RESUME" => Color.Info,
+            "STATUS" => Color.Primary,
+            "RESET" => Color.Secondary,
+            _ => Color.Default
+        };
+    }
+
+    private static string GetCommandTypeIcon(string commandType)
+    {
+        return commandType.ToUpper() switch
+        {
+            "START" => Icons.Material.Filled.PlayArrow,
+            "STOP" => Icons.Material.Filled.Stop,
+            "PAUSE" => Icons.Material.Filled.Pause,
+            "RESUME" => Icons.Material.Filled.PlayArrow,
+            "STATUS" => Icons.Material.Filled.Info,
+            "RESET" => Icons.Material.Filled.Refresh,
+            _ => Icons.Material.Filled.Terminal
+        };
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        refreshTimer?.Dispose();
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}

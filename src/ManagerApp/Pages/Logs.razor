@@ -1,0 +1,483 @@
+@page "/logs"
+@using MachineManagement.ManagerApp.Models
+@using MachineManagement.ManagerApp.Services
+@using Microsoft.AspNetCore.SignalR.Client
+@implements IAsyncDisposable
+@inject ILogService LogService
+@inject IMachineService MachineService
+@inject IJSRuntime JS
+@inject ILogger<Logs> Logger
+
+<PageTitle>Logs - Machine Management</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <div class="d-flex justify-space-between align-center mb-6">
+        <MudText Typo="Typo.h4">
+            <MudIcon Icon="@Icons.Material.Filled.Description" Class="mr-3" />
+            System Logs
+        </MudText>
+        <div class="d-flex gap-2">
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Refresh"
+                       OnClick="RefreshLogs">
+                Refresh
+            </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Secondary"
+                       StartIcon="@Icons.Material.Filled.Download"
+                       OnClick="ExportLogs">
+                Export
+            </MudButton>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <MudCard Class="pa-4 mb-4">
+        <MudGrid>
+            <MudItem xs="12" md="3">
+                <MudSelect @bind-Value="selectedLevel" Label="Log Level" AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem Value="@("")">All Levels</MudSelectItem>
+                    <MudSelectItem Value="Error">Error</MudSelectItem>
+                    <MudSelectItem Value="Warning">Warning</MudSelectItem>
+                    <MudSelectItem Value="Information">Information</MudSelectItem>
+                    <MudSelectItem Value="Debug">Debug</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudSelect @bind-Value="selectedMachine" Label="Machine" AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem Value="@("")">All Machines</MudSelectItem>
+                    @foreach (var machine in availableMachines)
+                    {
+                        <MudSelectItem Value="@machine.MachineId">@machine.MachineName</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudDatePicker @bind-Date="startDate" Label="Start Date" />
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudDatePicker @bind-Date="endDate" Label="End Date" />
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           FullWidth="true"
+                           StartIcon="@Icons.Material.Filled.Search"
+                           OnClick="ApplyFilters">
+                    Search
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+        
+        <MudGrid Class="mt-3">
+            <MudItem xs="12">
+                <MudTextField @bind-Value="searchText" 
+                              Placeholder="Search in log messages..."
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              OnKeyUp="OnSearchKeyUp" />
+            </MudItem>
+        </MudGrid>
+    </MudCard>
+
+    @if (isLoading)
+    {
+        <MudContainer Class="d-flex justify-center align-center" Style="height: 50vh">
+            <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+        </MudContainer>
+    }
+    else
+    {
+        <!-- Log Statistics -->
+        <MudCard Class="pa-4 mb-4">
+            <MudCardContent>
+                <MudGrid>
+                    <MudItem xs="6" sm="3">
+                        <div class="d-flex align-center">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Info" Class="mr-2" />
+                            <div>
+                                <MudText Typo="Typo.caption">Information</MudText>
+                                <MudText Typo="Typo.h6">@logStats.Information</MudText>
+                            </div>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <div class="d-flex align-center">
+                            <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Class="mr-2" />
+                            <div>
+                                <MudText Typo="Typo.caption">Warnings</MudText>
+                                <MudText Typo="Typo.h6">@logStats.Warnings</MudText>
+                            </div>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <div class="d-flex align-center">
+                            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Class="mr-2" />
+                            <div>
+                                <MudText Typo="Typo.caption">Errors</MudText>
+                                <MudText Typo="Typo.h6">@logStats.Errors</MudText>
+                            </div>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <div class="d-flex align-center">
+                            <MudIcon Icon="@Icons.Material.Filled.Analytics" Color="Color.Primary" Class="mr-2" />
+                            <div>
+                                <MudText Typo="Typo.caption">Total</MudText>
+                                <MudText Typo="Typo.h6">@totalLogs</MudText>
+                            </div>
+                        </div>
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
+
+        <!-- Log Table -->
+        <MudCard>
+            <MudCardContent>
+                <MudTable Items="@logs" 
+                         Dense="true" 
+                         Hover="true" 
+                         FixedHeader="true"
+                         Height="600px"
+                         Loading="@isLoading"
+                         LoadingProgressColor="Color.Info">
+                    <HeaderContent>
+                        <MudTh>Level</MudTh>
+                        <MudTh>Timestamp</MudTh>
+                        <MudTh>Machine</MudTh>
+                        <MudTh>Message</MudTh>
+                        <MudTh>Details</MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Level">
+                            <MudChip Color="@GetLogLevelColor(context.Level)" Size="Size.Small">
+                                <MudIcon Icon="@GetLogLevelIcon(context.Level)" Size="Size.Small" Class="mr-1" />
+                                @context.Level
+                            </MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="Timestamp">
+                            @context.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")
+                        </MudTd>
+                        <MudTd DataLabel="Machine">
+                            @if (!string.IsNullOrEmpty(context.MachineId))
+                            {
+                                <MudChip Size="Size.Small" Variant="Variant.Outlined">
+                                    @context.MachineId
+                                </MudChip>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.caption" Class="text--secondary">System</MudText>
+                            }
+                        </MudTd>
+                        <MudTd DataLabel="Message">
+                            <div class="log-message">
+                                @if (context.Message.Length > 100)
+                                {
+                                    <span>@context.Message.Substring(0, 100)...</span>
+                                }
+                                else
+                                {
+                                    @context.Message
+                                }
+                            </div>
+                        </MudTd>
+                        <MudTd DataLabel="Details">
+                            @if (!string.IsNullOrEmpty(context.Details))
+                            {
+                                <MudTooltip Text="@context.Details">
+                                    <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" />
+                                </MudTooltip>
+                            }
+                        </MudTd>
+                        <MudTd DataLabel="Actions">
+                            <MudButton Size="Size.Small" 
+                                       Variant="Variant.Text" 
+                                       StartIcon="@Icons.Material.Filled.Visibility"
+                                       OnClick="() => ViewLogDetails(context)">
+                                View
+                            </MudButton>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudCardContent>
+            
+            <!-- Pagination -->
+            @if (totalPages > 1)
+            {
+                <MudCardActions>
+                    <MudPagination Count="totalPages" 
+                                   SelectedChanged="OnPageChanged" 
+                                   Selected="currentPage" 
+                                   Color="Color.Primary" 
+                                   Class="ma-4" />
+                </MudCardActions>
+            }
+        </MudCard>
+    }
+</MudContainer>
+
+@code {
+    private List<LogEntryDto> logs = new();
+    private List<MachineDto> availableMachines = new();
+    private bool isLoading = true;
+    
+    // Filters
+    private string selectedLevel = "";
+    private string selectedMachine = "";
+    private DateTime? startDate = DateTime.Today.AddDays(-7);
+    private DateTime? endDate = DateTime.Today.AddDays(1);
+    private string searchText = "";
+    
+    // Pagination
+    private int currentPage = 1;
+    private int pageSize = 50;
+    private int totalPages = 1;
+    private int totalLogs = 0;
+    
+    // Statistics
+    private LogStatsDto logStats = new();
+    
+    // SignalR
+    private HubConnection? hubConnection;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMachines();
+        await LoadLogs();
+        await InitializeSignalR();
+    }
+
+    private async Task LoadMachines()
+    {
+        try
+        {
+            availableMachines = (await MachineService.GetAllMachinesAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading machines");
+        }
+    }
+
+    private async Task LoadLogs()
+    {
+        try
+        {
+            isLoading = true;
+            
+            var query = new LogQueryRequest
+            {
+                Level = selectedLevel,
+                MachineId = selectedMachine,
+                StartTime = startDate,
+                EndTime = endDate,
+                SearchText = searchText,
+                Page = currentPage,
+                PageSize = pageSize
+            };
+
+            var result = await LogService.GetLogsAsync(query);
+            logs = result.Items.ToList();
+            totalLogs = result.TotalCount;
+            totalPages = (int)Math.Ceiling((double)totalLogs / pageSize);
+            
+            // Calculate statistics
+            await CalculateStats();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading logs");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CalculateStats()
+    {
+        try
+        {
+            var infoQuery = new LogQueryRequest
+            {
+                Level = "Information",
+                MachineId = selectedMachine,
+                StartTime = startDate,
+                EndTime = endDate,
+                SearchText = searchText,
+                PageSize = 1
+            };
+            
+            var warningQuery = new LogQueryRequest
+            {
+                Level = "Warning",
+                MachineId = selectedMachine,
+                StartTime = startDate,
+                EndTime = endDate,
+                SearchText = searchText,
+                PageSize = 1
+            };
+            
+            var errorQuery = new LogQueryRequest
+            {
+                Level = "Error",
+                MachineId = selectedMachine,
+                StartTime = startDate,
+                EndTime = endDate,
+                SearchText = searchText,
+                PageSize = 1
+            };
+
+            var infoResult = await LogService.GetLogsAsync(infoQuery);
+            var warningResult = await LogService.GetLogsAsync(warningQuery);
+            var errorResult = await LogService.GetLogsAsync(errorQuery);
+
+            logStats = new LogStatsDto
+            {
+                Information = infoResult.TotalCount,
+                Warnings = warningResult.TotalCount,
+                Errors = errorResult.TotalCount
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error calculating log statistics");
+        }
+    }
+
+    private async Task ApplyFilters()
+    {
+        currentPage = 1;
+        await LoadLogs();
+    }
+
+    private async Task OnPageChanged(int page)
+    {
+        currentPage = page;
+        await LoadLogs();
+    }
+
+    private async Task OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ApplyFilters();
+        }
+    }
+
+    private async Task RefreshLogs()
+    {
+        await LoadLogs();
+    }
+
+    private async Task ExportLogs()
+    {
+        // Export logs to CSV or Excel
+        // This could be implemented with a service
+        await JS.InvokeVoidAsync("alert", "Export functionality coming soon!");
+    }
+
+    private async Task ViewLogDetails(LogEntryDto log)
+    {
+        var message = $"Log Details:\n\n" +
+                     $"ID: {log.Id}\n" +
+                     $"Level: {log.Level}\n" +
+                     $"Timestamp: {log.Timestamp:yyyy-MM-dd HH:mm:ss}\n" +
+                     $"Machine: {log.MachineId ?? "System"}\n\n" +
+                     $"Message: {log.Message}\n\n";
+        
+        if (!string.IsNullOrEmpty(log.Details))
+        {
+            message += $"Details: {log.Details}";
+        }
+
+        await JS.InvokeVoidAsync("alert", message);
+    }
+
+    private Color GetLogLevelColor(string level)
+    {
+        return level?.ToLower() switch
+        {
+            "error" => Color.Error,
+            "warning" => Color.Warning,
+            "information" => Color.Info,
+            "debug" => Color.Default,
+            _ => Color.Default
+        };
+    }
+
+    private string GetLogLevelIcon(string level)
+    {
+        return level?.ToLower() switch
+        {
+            "error" => Icons.Material.Filled.Error,
+            "warning" => Icons.Material.Filled.Warning,
+            "information" => Icons.Material.Filled.Info,
+            "debug" => Icons.Material.Filled.BugReport,
+            _ => Icons.Material.Filled.Circle
+        };
+    }
+
+    private async Task InitializeSignalR()
+    {
+        try
+        {
+            hubConnection = new HubConnectionBuilder()
+                .WithUrl("/machinehub")
+                .Build();
+
+            hubConnection.On<LogEntryDto>("NewLogEntry", async (newLog) =>
+            {
+                // Insert new log at the beginning if it matches current filters
+                if (MatchesCurrentFilters(newLog))
+                {
+                    logs.Insert(0, newLog);
+                    if (logs.Count > pageSize)
+                    {
+                        logs.RemoveAt(logs.Count - 1);
+                    }
+                    totalLogs++;
+                    await CalculateStats();
+                    await InvokeAsync(StateHasChanged);
+                }
+            });
+
+            await hubConnection.StartAsync();
+            await hubConnection.SendAsync("SubscribeToLogs", selectedLevel, selectedMachine);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error initializing SignalR connection");
+        }
+    }
+
+    private bool MatchesCurrentFilters(LogEntryDto log)
+    {
+        var matchesLevel = string.IsNullOrEmpty(selectedLevel) || log.Level.Equals(selectedLevel, StringComparison.OrdinalIgnoreCase);
+        var matchesMachine = string.IsNullOrEmpty(selectedMachine) || log.MachineId?.Equals(selectedMachine, StringComparison.OrdinalIgnoreCase) == true;
+        var matchesDate = log.Timestamp >= startDate && log.Timestamp <= endDate;
+        var matchesSearch = string.IsNullOrEmpty(searchText) || log.Message.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+        
+        return matchesLevel && matchesMachine && matchesDate && matchesSearch;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+    
+    private class LogStatsDto
+    {
+        public int Information { get; set; }
+        public int Warnings { get; set; }
+        public int Errors { get; set; }
+    }
+}
