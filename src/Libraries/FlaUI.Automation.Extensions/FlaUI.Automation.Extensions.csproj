@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <AssemblyTitle>FlaUI.Automation.Extensions</AssemblyTitle>
+    <AssemblyDescription>Reusable UI Automation library based on FlaUI for WPF applications</AssemblyDescription>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <PackageId>FlaUI.Automation.Extensions</PackageId>
+    <Authors>Machine Management System Team</Authors>
+    <Company>MMS</Company>
+    <Product>UI Automation Extensions</Product>
+    <Copyright>Copyright © 2025</Copyright>
+    <PackageDescription>A comprehensive UI Automation library built on FlaUI, providing easy-to-use services for automated UI testing and interaction in WPF applications.</PackageDescription>
+    <PackageTags>FlaUI;UI Automation;WPF;Testing;Automation</PackageTags>
+    <RepositoryUrl>https://github.com/your-repo/machine-management-system</RepositoryUrl>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FlaUI.Core" Version="5.0.0" />
+    <PackageReference Include="FlaUI.UIA3" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>
