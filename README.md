@@ -1,340 +1,226 @@
 # Machine Management System
 
-> **🏭 Hệ thống quản lý máy móc sản xuất với thu thập log và điều khiển từ xa**
-
-[![.NET](https://github.com/thanhnvbk92/machine-management-system/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/thanhnvbk92/machine-management-system/actions)
-[![Release](https://github.com/thanhnvbk92/machine-management-system/workflows/Release%20Pipeline/badge.svg)](https://github.com/thanhnvbk92/machine-management-system/releases)
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue?logo=docker)](https://github.com/thanhnvbk92/machine-management-system/pkgs/container/machine-management-system)
+> **Hệ thống quản lý máy móc sản xuất với thu thập log và điều khiển từ xa**
 
 ## 🚀 Tổng quan hệ thống
 
 **✅ BACKEND API HOÀN THÀNH - READY FOR TESTING**
-**✅ WPF DESKTOP CLIENT HOÀN THÀNH - READY FOR TESTING**
-**✅ CI/CD PIPELINE HOÀN THÀNH - AUTOMATED DEPLOYMENT**
+**✅ WPF CLIENT APP HOÀN THÀNH - WITH UI AUTOMATION LIBRARY**
+**✅ FLAUI AUTOMATION LIBRARY HOÀN THÀNH - REUSABLE ACROSS PROJECTS**
 
 ### Mô tả kiến trúc:
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │   CLIENT APP    │    │   BACKEND API    │    │  MANAGER WEB    │
 │   (WPF Desktop) │◄──►│  (.NET 8 Core)   │◄──►│ (Blazor Server) │
-│       ✅        │    │       ✅         │    │   (Coming)      │
+│        ✅       │    │       ✅         │    │   (Coming)      │
 │ - Log Collection│    │ - REST APIs      │    │ - Dashboard     │
 │ - Command Exec  │    │ - Business Logic │    │ - Management    │
 │ - Config Sync   │    │ - Data Access    │    │ - Reporting     │
+│ - UI Automation │    │ - Health Checks  │    │ - Real-time     │
+│ - Backup System │    │ - Swagger UI     │    │   Monitoring    │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
-                                │                        │
-                                ▼                        ▼
-                       ┌──────────────────┐    ┌─────────────────┐
-                       │   MySQL DATABASE │    │  GITHUB ACTIONS │
-                       │ machine_mgmt_db  │    │    CI/CD ✅     │
-                       │       ✅         │    │ - Auto Build    │
-                       └──────────────────┘    │ - Testing       │
-                                              │ - Docker Deploy │
-                                              │ - Security Scan │
-                                              └─────────────────┘
+                                │
+                                ▼
+                       ┌──────────────────┐
+                       │   MySQL DATABASE │
+                       │ machine_mgmt_db  │
+                       │       ✅         │
+                       └──────────────────┘
+                                │
+                                ▼
+                    ┌─────────────────────────┐
+                    │ FLAUI AUTOMATION LIB    │
+                    │      ✅ REUSABLE        │
+                    │ - Button Clicking       │
+                    │ - Text Reading          │
+                    │ - Element Monitoring    │
+                    │ - Cross-Project Support │
+                    └─────────────────────────┘
 ```
 
-### 3 thành phần chính:
-1. **✅ Client App** (Windows Desktop - WPF):
-   - Tự động đọc log files từ máy production
-   - Gửi data lên server API với batch processing
-   - Nhận lệnh và điều khiển ứng dụng khác
-   - Material Design UI với real-time monitoring
-   - Sử dụng: WPF, MVVM, Material Design, Dependency Injection
+### 4 thành phần chính:
 
-2. **✅ Backend API** (.NET 8 Web API):
-   - Nhận log từ clients với RESTful endpoints
-   - Lưu vào MySQL database với EF Core
-   - Quản lý commands và client registry
-   - Health checks, Swagger documentation, CORS
-   - Sử dụng: ASP.NET Core, EF Core, Repository Pattern, Clean Architecture
+#### 1. **✅ Backend API** (.NET 8 Core Web API) - **HOÀN THÀNH**
+   - **RESTful APIs**: Machine management, log collection, command execution
+   - **Clean Architecture**: Repository pattern, service layer, dependency injection
+   - **Database**: MySQL với EF Core, hierarchical production structure
+   - **Features**: Swagger UI, health checks, structured logging, CORS
+   - **Endpoints**: 
+     - `/api/machines` - Quản lý machines (CRUD, heartbeat, registration)
+     - `/api/logs` - Thu thập và truy vấn logs (batch upload, filtering)
+   - **Tech Stack**: ASP.NET Core 8, EF Core, MySQL, Serilog, AutoMapper
 
-3. **🔄 Manager Web** (Blazor Server - Coming Soon):
+#### 2. **✅ Client App** (Windows Desktop - WPF) - **HOÀN THÀNH**
+   - **Material Design 3 UI**: Modern, beautiful interface với MaterialDesignThemes
+   - **Machine Info Management**: Real-time machine status và configuration
+   - **Log Collection**: Tự động đọc và upload log files
+   - **Backup System**: Advanced backup với FTP, scheduling, date filtering
+   - **UI Automation**: Integration với FlaUI library cho automated testing
+   - **Pin Count Monitoring**: Real-time pin usage tracking với warnings
+   - **Tech Stack**: WPF, MVVM, CommunityToolkit.Mvvm, Material Design, FluentFTP, FlaUI
+
+#### 3. **✅ FlaUI Automation Library** - **HOÀN THÀNH & REUSABLE**
+   - **Core Automation**: Button clicking, text reading, form interaction
+   - **Element Monitoring**: Real-time UI element change detection
+   - **Demo Services**: Comprehensive automation demonstrations
+   - **Cross-Project Support**: Reusable trong WPF, Console, Web, Windows Service
+   - **Dependency Injection**: Easy integration với Microsoft DI container
+   - **Tech Stack**: FlaUI.Core, FlaUI.UIA3, Microsoft.Extensions.*
+
+#### 4. **🌐 Manager Web** (Blazor Server) - **PLANNED**
    - Dashboard xem clients và log data
    - Gửi lệnh điều khiển từ xa
-   - Báo cáo và analytics
-   - Sử dụng: Blazor Server, SignalR, Material Design
+   - **Tech Stack**: Blazor Server, SignalR
+   - Quản lý cấu hình hệ thống
 
-## 🛠️ Tech Stack
+## 🎯 Features đã hoàn thành
 
-### Backend (.NET 8)
-- **Framework**: ASP.NET Core Web API
-- **Database**: MySQL với Entity Framework Core
-- **Architecture**: Clean Architecture, Repository Pattern
-- **Features**: Swagger, Health Checks, CORS, Structured Logging
-- **ORM**: Entity Framework Core với Code-First approach
+### WPF Client App:
+- ✅ **Modern UI**: Material Design 3 với navigation improvements
+- ✅ **Machine Information**: 3-column compact layout với real-time updates
+- ✅ **Pin Count Table**: DataGrid với status indicators và reset functionality
+- ✅ **Backup System**: FTP integration với progress tracking
+- ✅ **Advanced Backup**: Time scheduling, date filtering, next backup calculation
+- ✅ **UI Automation Demo**: Complete integration với FlaUI library
+- ✅ **Element Monitoring**: Real-time tracking của UI element changes
 
-### Desktop Client (WPF)
-- **Framework**: WPF với .NET 8
-- **Pattern**: MVVM với CommunityToolkit.Mvvm
-- **UI**: Material Design trong WPF
-- **DI**: Microsoft.Extensions.DependencyInjection
-- **HTTP**: HttpClient với System.Net.Http.Json
-- **Logging**: Microsoft.Extensions.Logging
-
-### Database
-- **Engine**: MySQL 8.0+
-- **Structure**: Hierarchical production management
-- **Features**: Log partitioning, stored procedures, views
-- **Support**: Multiple buyers (BMW, Audi, VW, Mercedes)
-
-### DevOps & CI/CD
-- **Platform**: GitHub Actions
-- **Containers**: Docker với multi-stage builds
-- **Registry**: GitHub Container Registry (GHCR)
-- **Testing**: Automated unit và integration tests
-- **Security**: CodeQL analysis, dependency scanning
-- **Deployment**: Multi-environment với production releases
+### FlaUI Automation Library:
+- ✅ **IUIAutomationService**: Core automation với button clicking, text reading
+- ✅ **IElementMonitoringService**: Real-time element monitoring với events
+- ✅ **IAutomationDemoService**: Comprehensive demo với progress reporting
+- ✅ **ServiceCollectionExtensions**: Easy DI registration
+- ✅ **Cross-Project Compatible**: Console, WPF, Web applications
+- ✅ **NuGet Package Ready**: Configured để distribute
 
 ## 🚀 Quick Start
 
-### Yêu cầu hệ thống
+### Prerequisites:
+- .NET 8 SDK
+- MySQL Server
+- Visual Studio 2022 hoặc VS Code
 
-- **.NET 8 SDK** - [Download](https://dotnet.microsoft.com/download/dotnet/8.0)
-- **MySQL Server 8.0+** - [Download](https://dev.mysql.com/downloads/mysql/)
-- **Visual Studio 2022** hoặc **VS Code** - [Download](https://visualstudio.microsoft.com/)
-- **Git** - [Download](https://git-scm.com/)
-- **Docker** (optional) - [Download](https://docs.docker.com/get-docker/)
-
-### Cài đặt và chạy
-
-#### Option 1: Development Setup
-
-##### 1. Clone repository
+### 1. Clone Repository:
 ```bash
 git clone https://github.com/thanhnvbk92/machine-management-system.git
 cd machine-management-system
 ```
 
-##### 2. Cài đặt database
-```powershell
-# Tạo database và bảng
-.\setup-database.ps1 -Username "root" -Password "your_password"
-
-# Thêm dữ liệu mẫu
-.\setup-database.ps1 -Action seed -Username "root" -Password "your_password"
+### 2. Database Setup:
+```bash
+# Run setup script
+.\setup-database.ps1
 ```
 
-##### 3. Cấu hình connection string
-Chỉnh sửa `src/Backend/MachineManagement.API/appsettings.Development.json`:
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=machine_management_db;Uid=root;Pwd=your_password;Port=3306;CharSet=utf8mb4;"
-  }
-}
-```
-
-##### 4. Chạy Backend API
-```powershell
-# Build và chạy API server
+### 3. Run Backend API:
+```bash
+# Start API server
 .\run-backend.ps1
-
-# Hoặc chạy trực tiếp
-dotnet run --project src/Backend/MachineManagement.API
 ```
 
-##### 5. Truy cập Swagger UI
-Mở trình duyệt và truy cập: **https://localhost:5001**
-
-##### 6. Chạy WPF Desktop Client
-```powershell
-cd src/ClientApp/MachineClient.WPF
-dotnet restore
-dotnet build
+### 4. Run WPF Client:
+```bash
+cd src\ClientApp\MachineClient.WPF
 dotnet run
 ```
 
-#### Option 2: Docker Deployment
-
-##### 1. Pull và chạy từ GHCR
+### 5. Test UI Automation:
 ```bash
-# Pull latest image
-docker pull ghcr.io/thanhnvbk92/machine-management-system:latest
-
-# Chạy với MySQL
-docker-compose up -d
+cd src\Demos\UIAutomationConsoleDemo
+dotnet run
 ```
 
-##### 2. Build local image
-```bash
-# Build custom image
-docker build -t machine-management-system .
-
-# Chạy với environment variables
-docker run -p 5000:8080 \
-  -e ConnectionStrings__DefaultConnection="Server=host.docker.internal;Database=machine_management_db;Uid=root;Pwd=yourpassword;" \
-  machine-management-system
-```
-
-## 📊 Tính năng hiện tại
-
-### Backend API
-- ✅ **Machine Registration**: Đăng ký và quản lý máy móc
-- ✅ **Log Collection**: Thu thập logs theo batch với optimization
-- ✅ **Heartbeat Monitoring**: Giám sát trạng thái máy real-time
-- ✅ **Command Management**: Gửi và theo dõi lệnh điều khiển
-- ✅ **Health Checks**: Endpoint kiểm tra sức khỏe hệ thống
-- ✅ **Swagger Documentation**: API documentation đầy đủ
-- ✅ **CORS Support**: Cross-origin resource sharing
-- ✅ **Structured Logging**: Logging với Serilog
-
-### WPF Desktop Client
-- ✅ **Material Design UI**: Giao diện đẹp với Material Design
-- ✅ **Real-time Dashboard**: Hiển thị metrics và status live
-- ✅ **Auto Log Collection**: Tự động đọc và parse log files
-- ✅ **Configuration Management**: Quản lý settings với JSON
-- ✅ **Connection Monitoring**: Theo dõi kết nối API server
-- ✅ **Command Execution**: Nhận và thực thi lệnh từ xa
-- ✅ **MVVM Pattern**: Kiến trúc MVVM với data binding
-- ✅ **Dependency Injection**: DI container với services
-
-### Database
-- ✅ **Hierarchical Structure**: BUYERS→LINES→STATIONS→MACHINES
-- ✅ **Log Partitioning**: Phân vùng logs theo tháng
-- ✅ **Stored Procedures**: Procedures cho operations phức tạp
-- ✅ **Views**: Views cho reporting và analytics
-- ✅ **Sample Data**: Dữ liệu mẫu cho testing
-
-### DevOps & CI/CD
-- ✅ **GitHub Actions Workflows**: Automated CI/CD pipeline
-- ✅ **Multi-Platform Builds**: Windows, Linux, macOS support
-- ✅ **Automated Testing**: Unit tests, integration tests
-- ✅ **Security Scanning**: CodeQL analysis, dependency checks
-- ✅ **Docker Deployment**: Container builds và GHCR publishing
-- ✅ **Release Automation**: Semantic versioning và GitHub releases
-- ✅ **Environment Management**: Development, staging, production
-- ✅ **Monitoring**: Build status badges và notifications
-
-## 🔄 CI/CD Pipeline
-
-### Workflow Features
-```yaml
-# .github/workflows/ci-cd.yml
-🔄 Trigger: Push, PR, Schedule
-📦 Jobs: Build → Test → Security → Docker → Deploy
-🧪 Testing: Unit tests với coverage reporting
-🔒 Security: CodeQL analysis, dependency scanning
-🐳 Docker: Multi-stage builds với caching
-📊 Reports: Test results, security findings
-```
-
-### Release Process
-```yaml
-# .github/workflows/release.yml
-🏷️ Trigger: Version tags (v*.*.*)
-📋 Steps: Changelog → Build → Test → Package → Release
-📦 Artifacts: Binaries, Docker images, documentation
-🚀 Deploy: Automated production deployment
-```
-
-### Monitoring
-- **Build Status**: Realtime pipeline status
-- **Test Coverage**: Code coverage reports
-- **Security**: Vulnerability scanning
-- **Performance**: Build time optimization
-- **Notifications**: Slack, email alerts
-
-## 📁 Cấu trúc project
+## 📁 Project Structure
 
 ```
-machine-management-system/
-├── src/
-│   ├── Backend/                     # Backend API (.NET 8)
-│   │   ├── MachineManagement.Core/  # Domain entities, interfaces
-│   │   ├── MachineManagement.Infrastructure/ # Data access, repositories
-│   │   └── MachineManagement.API/   # Web API controllers, middleware
-│   ├── ClientApp/                   # Desktop WPF Client
-│   │   └── MachineClient.WPF/       # WPF app với Material Design
-│   └── ManagerApp/                  # Web Manager (Coming)
-├── SRS_Documents/                   # System Requirements Specification
-├── .github/
-│   └── workflows/                   # GitHub Actions CI/CD
-│       ├── ci-cd.yml               # Main CI/CD pipeline
-│       └── release.yml             # Release automation
-├── Dockerfile                      # Docker container definition
-├── docker-compose.yml              # Multi-container setup
-├── setup-database.ps1              # Database setup script
-├── run-backend.ps1                 # Backend run script
-└── README.md
+src/
+├── Libraries/
+│   └── FlaUI.Automation.Extensions/     # 🔥 Reusable UI Automation Library
+├── ClientApp/
+│   └── MachineClient.WPF/               # 🖥️ WPF Desktop Application
+├── Demos/
+│   └── UIAutomationConsoleDemo/         # 🔧 Console Demo Project
+├── Backend/                             # 🌐 API Server (separate repo)
+└── ManagerApp/                          # 📊 Web Dashboard (planned)
 ```
 
-## 🔄 Roadmap
+## 🔧 Technology Stack
 
-### Phase 2: Manager Web Application (Next)
-- [ ] Blazor Server web application
-- [ ] Dashboard với real-time data
-- [ ] Machine management interface
-- [ ] Command center cho remote control
-- [ ] Reporting và analytics
-- [ ] User authentication và authorization
+### Frontend (WPF):
+- **.NET 8** - Latest framework
+- **WPF** - Windows desktop UI
+- **MaterialDesignThemes 5.1.0** - Modern Material Design 3
+- **CommunityToolkit.Mvvm** - MVVM framework
+- **FluentFTP** - FTP client cho backup
+- **FlaUI** - UI Automation framework
 
-### Phase 3: Advanced Features
-- [ ] Machine learning cho log analysis
-- [ ] Predictive maintenance alerts
-- [ ] Mobile app support
-- [ ] Multi-tenant support
-- [ ] Advanced reporting với charts
-- [ ] Integration với third-party systems
+### Library (FlaUI.Automation.Extensions):
+- **FlaUI.Core & FlaUI.UIA3** - Core automation
+- **Microsoft.Extensions.*** - DI, Logging, Hosting
+- **Cross-Platform Compatible** - Windows applications
 
-### Phase 4: Production Excellence
-- ✅ Docker containerization
-- ✅ CI/CD pipeline hoàn chỉnh
-- [ ] Kubernetes deployment
-- [ ] Monitoring và alerting (Prometheus, Grafana)
-- [ ] Load balancing (nginx, HAProxy)
-- [ ] Security hardening (HTTPS, authentication)
-- [ ] Performance optimization
-- [ ] High availability setup
+### Backend (API):
+- **ASP.NET Core 8** - Web API framework
+- **Entity Framework Core** - ORM
+- **MySQL** - Database
+- **Serilog** - Structured logging
+- **AutoMapper** - Object mapping
+- **Swagger** - API documentation
+
+## 📚 Documentation
+
+- **[Library Reuse Guide](LIBRARY_REUSE_GUIDE.md)** - How to use FlaUI library in other projects
+- **[UI Automation Guide](src/ClientApp/MachineClient.WPF/UI_AUTOMATION_GUIDE.md)** - Complete UI automation documentation
+- **[SRS Documents](SRS_Documents/)** - System requirements và specifications
+- **[GitHub Instructions](.github/copilot-instructions.md)** - Development guidelines
+
+## 🔄 CI/CD
+
+- **GitHub Actions**: Automated build, test, và deployment
+- **Multi-Project Build**: Libraries và applications
+- **NuGet Package**: Automated library packaging
+- **Quality Gates**: Code analysis và testing
+
+## 🎯 Roadmap
+
+### Phase 1: ✅ COMPLETED
+- [x] Backend API với MySQL
+- [x] WPF Client với Material Design
+- [x] FlaUI Automation Library
+- [x] Basic UI Automation integration
+- [x] Backup system với FTP
+- [x] Advanced backup scheduling
+
+### Phase 2: 🔄 IN PROGRESS
+- [ ] Blazor Manager Web App
+- [ ] Real-time SignalR communication
+- [ ] Advanced reporting dashboard
+- [ ] NuGet package distribution
+
+### Phase 3: 📋 PLANNED
+- [ ] Multi-language support
+- [ ] Advanced analytics
+- [ ] Mobile companion app
+- [ ] Cloud deployment options
 
 ## 🤝 Contributing
 
-### Development Workflow
-1. Fork repository
-2. Create feature branch (`git checkout -b feature/AmazingFeature`)
-3. Make changes và test locally
-4. Commit với conventional commits (`git commit -m 'feat: Add AmazingFeature'`)
-5. Push to branch (`git push origin feature/AmazingFeature`)
-6. Open Pull Request
-7. CI/CD pipeline sẽ tự động chạy tests
-8. Review và merge
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-### Testing
-```bash
-# Chạy unit tests
-dotnet test
+## 📄 License
 
-# Chạy integration tests
-dotnet test --filter Category=Integration
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-# Check test coverage
-dotnet test --collect:"XPlat Code Coverage"
-```
+## 👨‍💻 Author
 
-### Docker Development
-```bash
-# Build development image
-docker build -t machine-management-dev .
-
-# Run với hot reload
-docker-compose -f docker-compose.dev.yml up
-```
-
-## 📝 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
-## 📞 Contact
-
-- **GitHub**: [@thanhnvbk92](https://github.com/thanhnvbk92)
-- **Repository**: [machine-management-system](https://github.com/thanhnvbk92/machine-management-system)
-- **Issues**: [GitHub Issues](https://github.com/thanhnvbk92/machine-management-system/issues)
-- **CI/CD**: [GitHub Actions](https://github.com/thanhnvbk92/machine-management-system/actions)
+**Thanh Nguyen**
+- GitHub: [@thanhnvbk92](https://github.com/thanhnvbk92)
+- Email: thanhnvbk92@gmail.com
 
 ---
 
-> **💡 Tip**: Để test hệ thống nhanh chóng, hãy chạy Backend API trước, sau đó mở WPF Client và click "Start Services"!
-> 
-> **🐳 Docker Tip**: Sử dụng `docker-compose up` để chạy toàn bộ stack (API + Database) chỉ với một lệnh!
-> 
-> **🚀 CI/CD Tip**: Mỗi commit sẽ trigger automated pipeline - check tab Actions để theo dõi build status!
+⭐ **Star this repo if you find it helpful!** ⭐
