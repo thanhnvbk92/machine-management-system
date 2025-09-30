@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using MachineClient.WPF.Models;
 
 namespace MachineClient.WPF.Services

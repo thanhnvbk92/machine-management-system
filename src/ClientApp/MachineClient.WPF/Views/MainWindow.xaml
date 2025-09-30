@@ -1,316 +1,519 @@
 <Window x:Class="MachineClient.WPF.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        mc:Ignorable="d"
-        Title="Machine Client - Log Collection &amp; Remote Control"
-        Height="800" Width="1200"
-        MinHeight="600" MinWidth="800"
+        xmlns:userControls="clr-namespace:MachineClient.WPF.Views.UserControls"
+        Title="Machine Management Client" 
+        Height="620" Width="900"
+        MinHeight="550" MinWidth="800"
         WindowStartupLocation="CenterScreen"
-        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
-        TextElement.FontWeight="Regular"
-        TextElement.FontSize="13"
-        TextOptions.TextFormattingMode="Ideal"
-        TextOptions.TextRenderingMode="Auto"
-        Background="{DynamicResource MaterialDesignPaper}"
-        FontFamily="{DynamicResource MaterialDesignFont}">
-    
-    <materialDesign:DialogHost>
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            
-            <!-- Header -->
-            <materialDesign:ColorZone Grid.Row="0" Mode="PrimaryMid" Padding="16" 
-                                      materialDesign:ElevationAssist.Elevation="Dp4">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    
-                    <StackPanel Grid.Column="0" Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Factory" Width="32" Height="32" 
-                                               VerticalAlignment="Center" Margin="0,0,12,0"/>
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="Machine Client" FontSize="20" FontWeight="SemiBold"/>
-                            <TextBlock Text="{Binding MachineId}" FontSize="14" Opacity="0.8"/>
-                        </StackPanel>
-                    </StackPanel>
-                    
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Ellipse Style="{StaticResource ConnectionStatusIndicator}"/>
-                        <TextBlock Text="{Binding ConnectionStatus}" Style="{StaticResource StatusTextBlock}" 
-                                 Foreground="White" Margin="0,0,16,0"/>
-                        <TextBlock Text="{Binding LastHeartbeat, StringFormat='Last: {0:HH:mm:ss}'}" 
-                                 FontSize="12" Opacity="0.8" Foreground="White"/>
-                    </StackPanel>
-                </Grid>
-            </materialDesign:ColorZone>
-            
+        Background="{DynamicResource MaterialDesignPaper}">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <!-- Sidebar - more compact -->
+            <ColumnDefinition Width="180"/>
             <!-- Main Content -->
-            <Grid Grid.Row="1" Margin="16">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-                
-                <!-- Control Buttons -->
-                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
-                    <Button Content="Start Services" Command="{Binding StartServicesCommand}" 
-                            Style="{StaticResource PrimaryButton}"
-                            IsEnabled="{Binding IsServiceRunning, Converter={x:Static materialDesign:NotConverter.Instance}}">
-                        <Button.ContentTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="Play" Style="{StaticResource StatusIcon}"/>
-                                    <TextBlock Text="Start Services" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </Button.ContentTemplate>
-                    </Button>
-                    
-                    <Button Content="Stop Services" Command="{Binding StopServicesCommand}" 
-                            Style="{StaticResource SecondaryButton}"
-                            IsEnabled="{Binding IsServiceRunning}">
-                        <Button.ContentTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="Stop" Style="{StaticResource StatusIcon}"/>
-                                    <TextBlock Text="Stop Services" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </Button.ContentTemplate>
-                    </Button>
-                    
-                    <Button Content="Test Connection" Command="{Binding TestConnectionCommand}" 
-                            Style="{StaticResource SecondaryButton}">
-                        <Button.ContentTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="Connection" Style="{StaticResource StatusIcon}"/>
-                                    <TextBlock Text="Test API" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </Button.ContentTemplate>
-                    </Button>
-                    
-                    <Button Content="Clear Logs" Command="{Binding ClearLogsCommand}" 
-                            Style="{StaticResource SecondaryButton}">
-                        <Button.ContentTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="BroomHorizontal" Style="{StaticResource StatusIcon}"/>
-                                    <TextBlock Text="Clear" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </Button.ContentTemplate>
-                    </Button>
-                </StackPanel>
-                
-                <!-- Statistics Cards -->
-                <UniformGrid Grid.Row="1" Rows="1" Columns="4" Margin="0,0,0,16">
-                    <materialDesign:Card Style="{StaticResource MetricCard}">
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <materialDesign:PackIcon Kind="Upload" Style="{StaticResource LargeIcon}" 
-                                                   Foreground="{DynamicResource PrimaryHueMidBrush}" 
-                                                   HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                            <TextBlock Text="{Binding TotalLogsSent}" Style="{StaticResource MetricTextBlock}"/>
-                            <TextBlock Text="Logs Sent" Style="{StaticResource MetricLabelTextBlock}"/>
-                        </StackPanel>
-                    </materialDesign:Card>
-                    
-                    <materialDesign:Card Style="{StaticResource MetricCard}">
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <materialDesign:PackIcon Kind="Queue" Style="{StaticResource LargeIcon}" 
-                                                   Foreground="{DynamicResource SecondaryHueMidBrush}" 
-                                                   HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                            <TextBlock Text="{Binding LogsInQueue}" Style="{StaticResource MetricTextBlock}"/>
-                            <TextBlock Text="In Queue" Style="{StaticResource MetricLabelTextBlock}"/>
-                        </StackPanel>
-                    </materialDesign:Card>
-                    
-                    <materialDesign:Card Style="{StaticResource MetricCard}">
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <materialDesign:PackIcon Kind="Timer" Style="{StaticResource LargeIcon}" 
-                                                   Foreground="{DynamicResource PrimaryHueDarkBrush}" 
-                                                   HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                            <TextBlock Text="{Binding LogCollectionInterval}s" Style="{StaticResource MetricTextBlock}"/>
-                            <TextBlock Text="Collection Interval" Style="{StaticResource MetricLabelTextBlock}"/>
-                        </StackPanel>
-                    </materialDesign:Card>
-                    
-                    <materialDesign:Card Style="{StaticResource MetricCard}">
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <materialDesign:PackIcon Kind="HeartPulse" Style="{StaticResource LargeIcon}" 
-                                                   Foreground="#4CAF50" 
-                                                   HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                            <TextBlock Text="{Binding HeartbeatInterval}s" Style="{StaticResource MetricTextBlock}"/>
-                            <TextBlock Text="Heartbeat Interval" Style="{StaticResource MetricLabelTextBlock}"/>
-                        </StackPanel>
-                    </materialDesign:Card>
-                </UniformGrid>
-                
-                <!-- Main Content Tabs -->
-                <TabControl Grid.Row="2" Style="{StaticResource MaterialDesignTabControl}">
-                    <!-- Recent Logs Tab -->
-                    <TabItem Header="Recent Logs">
-                        <TabItem.HeaderTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="FileDocumentOutline" Style="{StaticResource StatusIcon}"/>
-                                    <TextBlock Text="Recent Logs" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </TabItem.HeaderTemplate>
-                        
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            
-                            <materialDesign:Card Grid.Row="0" Style="{StaticResource InfoCard}" Margin="0,0,0,8">
-                                <TextBlock Text="Real-time log entries collected from the machine. Latest entries appear first." 
-                                         FontSize="13" Foreground="{DynamicResource MaterialDesignBodyLight}"/>
-                            </materialDesign:Card>
-                            
-                            <DataGrid Grid.Row="1" ItemsSource="{Binding RecentLogs}" 
-                                    Style="{StaticResource LogDataGrid}">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Time" Binding="{Binding Timestamp, StringFormat=HH:mm:ss}" Width="80"/>
-                                    <DataGridTextColumn Header="Level" Binding="{Binding Level}" Width="60">
-                                        <DataGridTextColumn.ElementStyle>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="FontWeight" Value="SemiBold"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Level}" Value="ERROR">
-                                                        <Setter Property="Foreground" Value="#F44336"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Level}" Value="WARN">
-                                                        <Setter Property="Foreground" Value="#FF9800"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Level}" Value="INFO">
-                                                        <Setter Property="Foreground" Value="#2196F3"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </DataGridTextColumn.ElementStyle>
-                                    </DataGridTextColumn>
-                                    <DataGridTextColumn Header="Machine" Binding="{Binding MachineId}" Width="100"/>
-                                    <DataGridTextColumn Header="Message" Binding="{Binding Message}" Width="*"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </Grid>
-                    </TabItem>
-                    
-                    <!-- Configuration Tab -->
-                    <TabItem Header="Configuration">
-                        <TabItem.HeaderTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="Settings" Style="{StaticResource StatusIcon}"/>
-                                    <TextBlock Text="Configuration" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </TabItem.HeaderTemplate>
-                        
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <StackPanel Margin="16">
-                                <TextBlock Text="Machine Configuration" Style="{StaticResource HeaderTextBlock}"/>
-                                
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="16"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    
-                                    <StackPanel Grid.Column="0">
-                                        <TextBox Text="{Binding MachineId}" 
-                                               materialDesign:HintAssist.Hint="Machine ID"
-                                               Style="{StaticResource ConfigTextBox}"/>
-                                        
-                                        <TextBox Text="{Binding StationName}" 
-                                               materialDesign:HintAssist.Hint="Station Name"
-                                               Style="{StaticResource ConfigTextBox}"/>
-                                        
-                                        <TextBox Text="{Binding LineName}" 
-                                               materialDesign:HintAssist.Hint="Line Name"
-                                               Style="{StaticResource ConfigTextBox}"/>
-                                        
-                                        <TextBox Text="{Binding ApiUrl}" 
-                                               materialDesign:HintAssist.Hint="API Server URL"
-                                               Style="{StaticResource ConfigTextBox}"/>
-                                    </StackPanel>
-                                    
-                                    <StackPanel Grid.Column="2">
-                                        <materialDesign:NumericUpDown Value="{Binding LogCollectionInterval}" 
-                                                                      Minimum="10" Maximum="300"
-                                                                      materialDesign:HintAssist.Hint="Log Collection Interval (seconds)"
-                                                                      Style="{StaticResource ConfigNumericUpDown}"/>
-                                        
-                                        <materialDesign:NumericUpDown Value="{Binding HeartbeatInterval}" 
-                                                                      Minimum="30" Maximum="600"
-                                                                      materialDesign:HintAssist.Hint="Heartbeat Interval (seconds)"
-                                                                      Style="{StaticResource ConfigNumericUpDown}"/>
-                                        
-                                        <CheckBox Content="Auto-start services on startup" 
-                                                IsChecked="{Binding AutoStart}" 
-                                                Margin="0,16,0,8"/>
-                                        
-                                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                            <TextBox Text="{Binding LogFolderPath}" 
-                                                   materialDesign:HintAssist.Hint="Log Folder Path"
-                                                   Style="{StaticResource ConfigTextBox}" 
-                                                   Width="300"/>
-                                            <Button Content="Browse" Command="{Binding OpenLogFolderCommand}" 
-                                                  Style="{StaticResource SecondaryButton}" 
-                                                  Margin="8,4,0,4"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Grid>
-                                
-                                <StackPanel Orientation="Horizontal" Margin="0,24,0,0">
-                                    <Button Content="Save Configuration" Command="{Binding SaveConfigurationCommand}" 
-                                          Style="{StaticResource PrimaryButton}"/>
-                                </StackPanel>
-                            </StackPanel>
-                        </ScrollViewer>
-                    </TabItem>
-                </TabControl>
-            </Grid>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Sidebar -->
+        <Border Grid.Column="0" 
+                Background="{DynamicResource MaterialDesignCardBackground}"
+                BorderThickness="0,0,1,0"
+                BorderBrush="{DynamicResource MaterialDesignDivider}">
             
-            <!-- Status Bar -->
-            <materialDesign:ColorZone Grid.Row="2" Mode="PrimaryDark" Padding="16,8" 
-                                      materialDesign:ElevationAssist.Elevation="Dp2">
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    
-                    <TextBlock Grid.Column="0" Text="{Binding LastError}" 
-                             Foreground="#FFCDD2" FontSize="12" VerticalAlignment="Center"
-                             Visibility="{Binding LastError, Converter={x:Static materialDesign:NullableToVisibilityConverter.Instance}}"/>
-                    
-                    <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <ProgressBar IsIndeterminate="{Binding IsServiceRunning}" 
-                                   Width="100" Height="2" 
-                                   Visibility="{Binding IsServiceRunning, Converter={x:Static materialDesign:BooleanToVisibilityConverter.Instance}}"
-                                   Margin="0,0,16,0"/>
-                        <TextBlock Text="{Binding LastHeartbeat, StringFormat='Last heartbeat: {0:HH:mm:ss}'}" 
-                                 FontSize="11" Opacity="0.8" Foreground="White" VerticalAlignment="Center"/>
+                <Grid.RowDefinitions>
+                    <!-- Theme Toggle -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- Navigation Menu -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- Spacer -->
+                    <RowDefinition Height="*"/>
+                    <!-- Update Button -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- Connection Info -->
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>                <!-- App Header with Theme Toggle -->
+                <materialDesign:Card Grid.Row="0" Style="{StaticResource MinimalistCard}" Margin="8,8,8,4">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        
+                        <!-- App Title -->
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                            <materialDesign:PackIcon Kind="Factory" 
+                                                     Foreground="{DynamicResource PrimaryHueMidBrush}" 
+                                                     Width="20" Height="20" 
+                                                     VerticalAlignment="Center"
+                                                     Margin="0,0,8,0"/>
+                            <StackPanel>
+                                <TextBlock Text="Machine Client" FontWeight="Bold" FontSize="16"/>
+                                <TextBlock Text="v1.0.0" FontSize="9" Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                            </StackPanel>
+                        </StackPanel>
+                        
+                        <!-- Theme Switch -->
+                        <Border Grid.Row="1" CornerRadius="12" 
+                                Background="{DynamicResource MaterialDesignDivider}"
+                                Height="24">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <!-- Light Mode Button -->
+                                <Button Grid.Column="0" x:Name="LightModeButton"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Height="24"
+                                        Click="LightModeButton_Click">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBodyLight}"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="border" 
+                                                                Background="{TemplateBinding Background}"
+                                                                CornerRadius="12,0,0,12"
+                                                                Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter HorizontalAlignment="Center"
+                                                                              VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsChecked, ElementName=DarkModeToggle}" Value="False">
+                                                    <Setter Property="Background" Value="{DynamicResource MaterialDesignPaper}"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <materialDesign:PackIcon Kind="WhiteBalanceSunny" Width="14" Height="14"/>
+                                </Button>
+                                
+                                <!-- Dark Mode Button -->
+                                <Button Grid.Column="1" x:Name="DarkModeButton"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Height="24"
+                                        Click="DarkModeButton_Click">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBodyLight}"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="border" 
+                                                                Background="{TemplateBinding Background}"
+                                                                CornerRadius="0,12,12,0"
+                                                                Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter HorizontalAlignment="Center"
+                                                                              VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsChecked, ElementName=DarkModeToggle}" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource MaterialDesignPaper}"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <materialDesign:PackIcon Kind="MoonWaxingCrescent" Width="14" Height="14"/>
+                                </Button>
+                                
+                                <!-- Hidden toggle for state management -->
+                                <ToggleButton x:Name="DarkModeToggle" 
+                                              Visibility="Hidden"
+                                              Checked="DarkModeToggle_Checked"
+                                              Unchecked="DarkModeToggle_Unchecked"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </materialDesign:Card>
+
+                <!-- Navigation Menu -->
+                <materialDesign:Card Grid.Row="1" Style="{StaticResource MinimalistCard}" Margin="8,0,8,4">
+                    <StackPanel>
+                        <!-- Home -->
+                        <Button Command="{Binding NavigateToHomeCommand}"
+                                Margin="0,0,0,3"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Left"
+                                Padding="10,8"
+                                BorderThickness="0">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Grid>
+                                                    <!-- Left Indicator -->
+                                                    <Rectangle x:Name="LeftIndicator" 
+                                                               Width="4" 
+                                                               Height="32"
+                                                               HorizontalAlignment="Left"
+                                                               VerticalAlignment="Center"
+                                                               Fill="{DynamicResource PrimaryHueMidBrush}"
+                                                               RadiusX="2" RadiusY="2"
+                                                               Visibility="Collapsed"/>
+                                                    
+                                                    <Border x:Name="border" 
+                                                            Background="{TemplateBinding Background}"
+                                                            CornerRadius="8"
+                                                            Padding="{TemplateBinding Padding}"
+                                                            Margin="6,0,0,0">
+                                                        <Border.Effect>
+                                                            <DropShadowEffect x:Name="shadow" 
+                                                                              ShadowDepth="0" 
+                                                                              BlurRadius="0" 
+                                                                              Opacity="0"/>
+                                                        </Border.Effect>
+                                                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                                    </Border>
+                                                </Grid>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="border" Property="Background">
+                                                            <Setter.Value>
+                                                                <SolidColorBrush Color="#E0E0E0" Opacity="0.3"/>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsHomePage}" Value="True">
+                                            <Setter Property="Background">
+                                                <Setter.Value>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                        <GradientStop Color="#E3F2FD" Offset="0"/>
+                                                        <GradientStop Color="#BBDEFB" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Grid>
+                                                            <!-- Left Indicator - Visible when selected -->
+                                                            <Rectangle Width="3" 
+                                                                       Height="28"
+                                                                       HorizontalAlignment="Left"
+                                                                       VerticalAlignment="Center"
+                                                                       Fill="{DynamicResource PrimaryHueMidBrush}"
+                                                                       RadiusX="1.5" RadiusY="1.5"/>
+                                                            
+                                                            <Border Background="{TemplateBinding Background}"
+                                                                    CornerRadius="0,6,6,0"
+                                                                    Padding="{TemplateBinding Padding}"
+                                                                    Margin="4,0,0,0"
+                                                                    BorderThickness="0,0,0,0">
+                                                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                                            </Border>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Home" VerticalAlignment="Center" Margin="0,0,8,0" Width="18" Height="18"/>
+                                <TextBlock Text="Home" VerticalAlignment="Center" FontSize="13" FontWeight="Medium"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Settings -->
+                        <Button Command="{Binding NavigateToSettingsCommand}"
+                                Margin="0,0,0,3"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Left"
+                                Padding="10,8"
+                                BorderThickness="0">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Grid>
+                                                    <Border x:Name="border" 
+                                                            Background="{TemplateBinding Background}"
+                                                            CornerRadius="8"
+                                                            Padding="{TemplateBinding Padding}"
+                                                            Margin="6,0,0,0">
+                                                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                                    </Border>
+                                                </Grid>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="border" Property="Background">
+                                                            <Setter.Value>
+                                                                <SolidColorBrush Color="#E0E0E0" Opacity="0.3"/>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSettingsPage}" Value="True">
+                                            <Setter Property="Background">
+                                                <Setter.Value>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                        <GradientStop Color="#E3F2FD" Offset="0"/>
+                                                        <GradientStop Color="#BBDEFB" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Grid>
+                                                            <!-- Left Indicator - Visible when selected -->
+                                                            <Rectangle Width="3" 
+                                                                       Height="28"
+                                                                       HorizontalAlignment="Left"
+                                                                       VerticalAlignment="Center"
+                                                                       Fill="{DynamicResource PrimaryHueMidBrush}"
+                                                                       RadiusX="1.5" RadiusY="1.5"/>
+                                                            
+                                                            <Border Background="{TemplateBinding Background}"
+                                                                    CornerRadius="0,6,6,0"
+                                                                    Padding="{TemplateBinding Padding}"
+                                                                    Margin="4,0,0,0"
+                                                                    BorderThickness="0,0,0,0">
+                                                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                                            </Border>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Settings" VerticalAlignment="Center" Margin="0,0,8,0" Width="18" Height="18"/>
+                                <TextBlock Text="Settings" VerticalAlignment="Center" FontSize="13" FontWeight="Medium"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- About -->
+                        <Button Command="{Binding NavigateToAboutCommand}"
+                                Margin="0,0,0,0"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Left"
+                                Padding="10,8"
+                                BorderThickness="0">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Grid>
+                                                    <Border x:Name="border" 
+                                                            Background="{TemplateBinding Background}"
+                                                            CornerRadius="8"
+                                                            Padding="{TemplateBinding Padding}"
+                                                            Margin="6,0,0,0">
+                                                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                                    </Border>
+                                                </Grid>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="border" Property="Background">
+                                                            <Setter.Value>
+                                                                <SolidColorBrush Color="#E0E0E0" Opacity="0.3"/>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsAboutPage}" Value="True">
+                                            <Setter Property="Background">
+                                                <Setter.Value>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                        <GradientStop Color="#E3F2FD" Offset="0"/>
+                                                        <GradientStop Color="#BBDEFB" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Grid>
+                                                            <!-- Left Indicator - Visible when selected -->
+                                                            <Rectangle Width="3" 
+                                                                       Height="28"
+                                                                       HorizontalAlignment="Left"
+                                                                       VerticalAlignment="Center"
+                                                                       Fill="{DynamicResource PrimaryHueMidBrush}"
+                                                                       RadiusX="1.5" RadiusY="1.5"/>
+                                                            
+                                                            <Border Background="{TemplateBinding Background}"
+                                                                    CornerRadius="0,6,6,0"
+                                                                    Padding="{TemplateBinding Padding}"
+                                                                    Margin="4,0,0,0"
+                                                                    BorderThickness="0,0,0,0">
+                                                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                                            </Border>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Information" VerticalAlignment="Center" Margin="0,0,8,0" Width="18" Height="18"/>
+                                <TextBlock Text="About" VerticalAlignment="Center" FontSize="13" FontWeight="Medium"/>
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
-                </Grid>
-            </materialDesign:ColorZone>
+                </materialDesign:Card>
+
+                <!-- Update Button -->
+                <Button Grid.Row="3" 
+                        Content="Check Update"
+                        Command="{Binding CheckUpdateCommand}"
+                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                        Height="28"
+                        FontSize="10"
+                        Margin="8,4,8,4"/>
+
+                <!-- Connection Info -->
+                <materialDesign:Card Grid.Row="4" Style="{StaticResource MinimalistCard}" Margin="8,0,8,8">
+                    <StackPanel>
+                        <TextBlock Text="Connection" FontSize="12" FontWeight="Medium" 
+                                   Foreground="{DynamicResource MaterialDesignBody}" 
+                                   Margin="0,0,0,8"/>
+                        
+                        <!-- Connection Status -->
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Ellipse Grid.Column="0" 
+                                     Width="8" Height="8"
+                                     VerticalAlignment="Center" 
+                                     Margin="0,0,8,0">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="#F44336"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                <Setter Property="Fill" Value="#4CAF50"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                            <TextBlock Grid.Column="1" 
+                                       Text="{Binding Status}" 
+                                       FontSize="11" 
+                                       VerticalAlignment="Center"
+                                       FontWeight="Medium"/>
+                            <TextBlock Grid.Column="2" 
+                                       Text="API" 
+                                       FontSize="9" 
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                        </Grid>
+                        
+                        <!-- IP Address -->
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <materialDesign:PackIcon Kind="IpNetwork" Grid.Column="0" 
+                                                     Width="12" Height="12" 
+                                                     Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                     VerticalAlignment="Center" 
+                                                     Margin="0,0,8,0"/>
+                            <TextBlock Grid.Column="1" 
+                                       Text="{Binding IpAddress}" 
+                                       FontSize="10" 
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+                        
+                        <!-- MAC Address -->
+                        <Grid Margin="0,0,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <materialDesign:PackIcon Kind="Ethernet" Grid.Column="0" 
+                                                     Width="12" Height="12" 
+                                                     Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                     VerticalAlignment="Center" 
+                                                     Margin="0,0,8,0"/>
+                            <TextBlock Grid.Column="1" 
+                                       Text="{Binding MacAddress}" 
+                                       FontSize="10" 
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+                    </StackPanel>
+                </materialDesign:Card>
+            </Grid>
+        </Border>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Column="1">
+            
+            <!-- Content Pages -->
+            <userControls:HomePage Visibility="{Binding IsHomePage, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                   DataContext="{Binding}"/>
+            
+            <userControls:SettingsPage Visibility="{Binding IsSettingsPage, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                       DataContext="{Binding}"/>
+            
+            <userControls:AboutPage Visibility="{Binding IsAboutPage, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                    DataContext="{Binding}"/>
+            
         </Grid>
-    </materialDesign:DialogHost>
+        
+    </Grid>
 </Window>

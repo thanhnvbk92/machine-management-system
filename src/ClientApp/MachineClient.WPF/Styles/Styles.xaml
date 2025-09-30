@@ -2,143 +2,161 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
 
-    <!-- Card Styles -->
+    <!-- Status Card Style -->
     <Style x:Key="StatusCard" TargetType="materialDesign:Card">
         <Setter Property="Margin" Value="8"/>
         <Setter Property="Padding" Value="16"/>
         <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp2"/>
-        <Setter Property="Background" Value="{DynamicResource MaterialDesignCardBackground}"/>
+        <Setter Property="Background" Value="{DynamicResource MaterialDesignPaper}"/>
     </Style>
 
-    <Style x:Key="InfoCard" TargetType="materialDesign:Card" BasedOn="{StaticResource StatusCard}">
-        <Setter Property="materialDesign:ColorZoneAssist.Mode" Value="PrimaryLight"/>
+    <!-- Header Text Block Style -->
+    <Style x:Key="HeaderTextBlock" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
+        <Setter Property="Margin" Value="0,0,0,12"/>
     </Style>
 
-    <Style x:Key="MetricCard" TargetType="materialDesign:Card" BasedOn="{StaticResource StatusCard}">
-        <Setter Property="MinHeight" Value="120"/>
-        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    <!-- Info Text Block Style -->
+    <Style x:Key="InfoTextBlock" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBodyLight}"/>
+        <Setter Property="Margin" Value="0,2"/>
+    </Style>
+
+    <!-- Value Text Block Style -->
+    <Style x:Key="ValueTextBlock" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="18"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
+    </Style>
+
+    <!-- Data Grid Style -->
+    <Style TargetType="DataGrid">
+        <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+        <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource MaterialDesignDivider}"/>
+        <Setter Property="AlternatingRowBackground" Value="{DynamicResource MaterialDesignSelection}"/>
+        <Setter Property="RowBackground" Value="Transparent"/>
+        <Setter Property="Background" Value="{DynamicResource MaterialDesignPaper}"/>
+        <Setter Property="HeadersVisibility" Value="Column"/>
+        <Setter Property="SelectionMode" Value="Single"/>
+        <Setter Property="SelectionUnit" Value="FullRow"/>
+        <Setter Property="CanUserReorderColumns" Value="True"/>
+        <Setter Property="CanUserResizeColumns" Value="True"/>
+        <Setter Property="CanUserSortColumns" Value="True"/>
+        <Setter Property="AutoGenerateColumns" Value="False"/>
+        <Setter Property="IsReadOnly" Value="True"/>
+    </Style>
+
+    <!-- Tab Control Style -->
+    <Style TargetType="TabControl" BasedOn="{StaticResource MaterialDesignTabControl}">
+        <Setter Property="materialDesign:NavigationRailAssist.ShowSelectionBackground" Value="True"/>
+        <Setter Property="materialDesign:ColorZoneAssist.Mode" Value="PrimaryMid"/>
     </Style>
 
     <!-- Button Styles -->
     <Style x:Key="ActionButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
         <Setter Property="Margin" Value="4"/>
-        <Setter Property="Padding" Value="16,8"/>
-        <Setter Property="FontWeight" Value="Medium"/>
-    </Style>
-
-    <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource ActionButton}">
-        <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="4"/>
-        <Setter Property="Background" Value="{DynamicResource PrimaryHueMidBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidForegroundBrush}"/>
+        <Setter Property="MinWidth" Value="120"/>
+        <Setter Property="Height" Value="36"/>
     </Style>
 
     <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
         <Setter Property="Margin" Value="4"/>
-        <Setter Property="Padding" Value="16,8"/>
-        <Setter Property="FontWeight" Value="Medium"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryHueMidBrush}"/>
+        <Setter Property="MinWidth" Value="100"/>
+        <Setter Property="Height" Value="36"/>
     </Style>
 
-    <!-- Text Styles -->
-    <Style x:Key="HeaderTextBlock" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="20"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
-        <Setter Property="Margin" Value="0,0,0,8"/>
+    <!-- Text Box Styles -->
+    <Style x:Key="SettingsTextBox" TargetType="TextBox" BasedOn="{StaticResource MaterialDesignOutlinedTextBox}">
+        <Setter Property="Margin" Value="0,8"/>
+        <Setter Property="materialDesign:HintAssist.IsFloating" Value="True"/>
+        <Setter Property="materialDesign:TextFieldAssist.HasClearButton" Value="True"/>
     </Style>
 
-    <Style x:Key="SubHeaderTextBlock" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="16"/>
-        <Setter Property="FontWeight" Value="Medium"/>
-        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
-        <Setter Property="Margin" Value="0,0,0,4"/>
+    <!-- Group Box Style -->
+    <Style TargetType="GroupBox" BasedOn="{StaticResource MaterialDesignGroupBox}">
+        <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp1"/>
+        <Setter Property="Margin" Value="0,0,0,16"/>
+        <Setter Property="Padding" Value="16"/>
     </Style>
 
-    <Style x:Key="MetricTextBlock" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="28"/>
-        <Setter Property="FontWeight" Value="Bold"/>
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
-        <Setter Property="HorizontalAlignment" Value="Center"/>
-    </Style>
-
-    <Style x:Key="MetricLabelTextBlock" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="12"/>
-        <Setter Property="FontWeight" Value="Regular"/>
-        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBodyLight}"/>
-        <Setter Property="HorizontalAlignment" Value="Center"/>
-        <Setter Property="Margin" Value="0,4,0,0"/>
-    </Style>
-
-    <Style x:Key="StatusTextBlock" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="14"/>
-        <Setter Property="FontWeight" Value="Medium"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
-    </Style>
-
-    <!-- Connection Status Indicator -->
-    <Style x:Key="ConnectionStatusIndicator" TargetType="Ellipse">
-        <Setter Property="Width" Value="14"/>
-        <Setter Property="Height" Value="14"/>
-        <Setter Property="Fill" Value="{DynamicResource MaterialDesignBodyLight}"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
-        <Setter Property="Margin" Value="0,0,8,0"/>
+    <!-- Status Indicator Styles -->
+    <Style x:Key="StatusIndicator" TargetType="Ellipse">
+        <Setter Property="Width" Value="12"/>
+        <Setter Property="Height" Value="12"/>
+        <Setter Property="Fill" Value="Red"/>
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                <Setter Property="Fill" Value="#4CAF50"/>  <!-- Green -->
-            </DataTrigger>
-            <DataTrigger Binding="{Binding IsConnected}" Value="False">
-                <Setter Property="Fill" Value="#F44336"/>  <!-- Red -->
+                <Setter Property="Fill" Value="LightGreen"/>
             </DataTrigger>
         </Style.Triggers>
     </Style>
 
-    <!-- Input Controls -->
-    <Style x:Key="ConfigTextBox" TargetType="TextBox" BasedOn="{StaticResource MaterialDesignOutlinedTextBox}">
-        <Setter Property="Margin" Value="0,4"/>
-        <Setter Property="Padding" Value="8"/>
-        <Setter Property="FontSize" Value="14"/>
-        <Setter Property="materialDesign:TextFieldAssist.OutlinedCornerRadius" Value="4"/>
-    </Style>
-
-    <Style x:Key="ConfigNumericUpDown" TargetType="materialDesign:NumericUpDown">
-        <Setter Property="Margin" Value="0,4"/>
-        <Setter Property="FontSize" Value="14"/>
-        <Setter Property="materialDesign:TextFieldAssist.OutlinedCornerRadius" Value="4"/>
-    </Style>
-
-    <!-- DataGrid Styles -->
-    <Style x:Key="LogDataGrid" TargetType="DataGrid" BasedOn="{StaticResource MaterialDesignDataGrid}">
-        <Setter Property="AutoGenerateColumns" Value="False"/>
-        <Setter Property="CanUserAddRows" Value="False"/>
-        <Setter Property="CanUserDeleteRows" Value="False"/>
-        <Setter Property="IsReadOnly" Value="True"/>
-        <Setter Property="SelectionMode" Value="Single"/>
-        <Setter Property="GridLinesVisibility" Value="Horizontal"/>
-        <Setter Property="HeadersVisibility" Value="Column"/>
-        <Setter Property="materialDesign:DataGridAssist.CellPadding" Value="8,4"/>
-        <Setter Property="materialDesign:DataGridAssist.ColumnHeaderPadding" Value="8,8"/>
-        <Setter Property="AlternatingRowBackground" Value="{DynamicResource MaterialDesignDivider}"/>
-        <Setter Property="FontSize" Value="13"/>
-    </Style>
-
-    <!-- Progress Bar -->
-    <Style x:Key="StatusProgressBar" TargetType="ProgressBar" BasedOn="{StaticResource MaterialDesignLinearProgressBar}">
+    <!-- Progress Bar Style -->
+    <Style TargetType="ProgressBar" BasedOn="{StaticResource MaterialDesignLinearProgressBar}">
         <Setter Property="Height" Value="4"/>
-        <Setter Property="Margin" Value="0,8,0,0"/>
-        <Setter Property="materialDesign:TransitionAssist.DisableTransitions" Value="True"/>
+        <Setter Property="Margin" Value="0,8"/>
+        <Setter Property="materialDesign:TransitionAssist.DisableTransitions" Value="False"/>
     </Style>
 
-    <!-- Icon Styles -->
-    <Style x:Key="StatusIcon" TargetType="materialDesign:PackIcon">
-        <Setter Property="Width" Value="20"/>
-        <Setter Property="Height" Value="20"/>
+    <!-- Slider Style -->
+    <Style TargetType="Slider" BasedOn="{StaticResource MaterialDesignSlider}">
+        <Setter Property="materialDesign:SliderAssist.OnlyShowFocusVisualWhileDragging" Value="True"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
-        <Setter Property="Margin" Value="0,0,8,0"/>
     </Style>
 
-    <Style x:Key="LargeIcon" TargetType="materialDesign:PackIcon" BasedOn="{StaticResource StatusIcon}">
-        <Setter Property="Width" Value="32"/>
-        <Setter Property="Height" Value="32"/>
+    <!-- CheckBox Style -->
+    <Style TargetType="CheckBox" BasedOn="{StaticResource MaterialDesignCheckBox}">
+        <Setter Property="Margin" Value="0,8"/>
+        <Setter Property="materialDesign:CheckBoxAssist.CheckBoxSize" Value="20"/>
     </Style>
+
+    <!-- List Box Style -->
+    <Style TargetType="ListBox" BasedOn="{StaticResource MaterialDesignListBox}">
+        <Setter Property="materialDesign:ListBoxAssist.IsToggle" Value="False"/>
+        <Setter Property="Background" Value="Transparent"/>
+    </Style>
+
+    <!-- Expander Style -->
+    <Style TargetType="Expander" BasedOn="{StaticResource MaterialDesignExpander}">
+        <Setter Property="materialDesign:ExpanderAssist.HorizontalHeaderPadding" Value="16,0"/>
+        <Setter Property="materialDesign:ExpanderAssist.VerticalHeaderPadding" Value="0,8"/>
+    </Style>
+
+    <!-- Menu Style -->
+    <Style TargetType="Menu" BasedOn="{StaticResource MaterialDesignMenu}">
+        <Setter Property="Background" Value="{DynamicResource MaterialDesignPaper}"/>
+        <Setter Property="materialDesign:MenuAssist.TopLevelMenuItemHeight" Value="48"/>
+    </Style>
+
+    <!-- Tooltip Style -->
+    <Style TargetType="ToolTip" BasedOn="{StaticResource MaterialDesignToolTip}">
+        <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp2"/>
+        <Setter Property="Padding" Value="12,8"/>
+    </Style>
+
+    <!-- Scroll Viewer Style -->
+    <Style TargetType="ScrollViewer">
+        <Setter Property="materialDesign:ScrollViewerAssist.IsAutoHideEnabled" Value="True"/>
+        <Setter Property="Focusable" Value="False"/>
+    </Style>
+
+    <!-- Application-specific Colors -->
+    <SolidColorBrush x:Key="SuccessColor" Color="#4CAF50"/>
+    <SolidColorBrush x:Key="WarningColor" Color="#FF9800"/>
+    <SolidColorBrush x:Key="ErrorColor" Color="#F44336"/>
+    <SolidColorBrush x:Key="InfoColor" Color="#2196F3"/>
+    
+    <!-- Status Colors -->
+    <SolidColorBrush x:Key="OnlineStatusColor" Color="#4CAF50"/>
+    <SolidColorBrush x:Key="OfflineStatusColor" Color="#F44336"/>
+    <SolidColorBrush x:Key="IdleStatusColor" Color="#FF9800"/>
+    
+    <!-- Chart Colors -->
+    <SolidColorBrush x:Key="ChartPrimaryColor" Color="#2196F3"/>
+    <SolidColorBrush x:Key="ChartSecondaryColor" Color="#FF9800"/>
+    <SolidColorBrush x:Key="ChartAccentColor" Color="#4CAF50"/>
 
 </ResourceDictionary>

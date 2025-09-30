@@ -1,8 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
+using System.Threading.Tasks;
 using MachineClient.WPF.Models;
 using Microsoft.Extensions.Logging;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text.Json;
 
 namespace MachineClient.WPF.Services
 {
@@ -10,44 +13,86 @@ namespace MachineClient.WPF.Services
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<ApiService> _logger;
-        private readonly JsonSerializerOptions _jsonOptions;
 
-        public ApiService(HttpClient httpClient, ILogger<ApiService> logger)
+        public ApiService(IHttpClientFactory httpClientFactory, ILogger<ApiService> logger)
         {
-            _httpClient = httpClient;
+            _httpClient = httpClientFactory.CreateClient("API");
             _logger = logger;
-            _jsonOptions = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                WriteIndented = true
-            };
         }
 
         public async Task<bool> TestConnectionAsync()
         {
             try
             {
-                var response = await _httpClient.GetAsync("/api/health");
+                var response = await _httpClient.GetAsync("api/health");
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to test API connection");
+                _logger.LogError(ex, "Connection test failed");
                 return false;
             }
         }
 
+        public async Task<MachineRegistrationResponse> RegisterMachineAsync(MachineRegistrationRequest request)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                
+                _logger.LogInformation("Sending registration request: {Request}", json);
+                
+                var response = await _httpClient.PostAsync("api/machines/register", content);
+                
+                var responseJson = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation("Received response - Status: {Status}, Body: {Body}", response.StatusCode, responseJson);
+                
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                
+                var result = JsonSerializer.Deserialize<MachineRegistrationResponse>(responseJson, options) ?? new MachineRegistrationResponse();
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("Machine registration successful for IP: {IP}, MAC: {MAC}", request.IP, request.MacAddress);
+                }
+                else
+                {
+                    _logger.LogWarning("Machine registration failed: {Message}", result.Message);
+                }
+                
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Machine registration failed for IP: {IP}", request.IP);
+                return new MachineRegistrationResponse
+                {
+                    IsSuccess = false,
+                    Message = $"Registration error: {ex.Message}"
+                };
+            }
+        }
+
+        [Obsolete("Use RegisterMachineAsync(MachineRegistrationRequest) instead")]
         public async Task RegisterMachineAsync(Machine machine)
         {
             try
             {
-                var response = await _httpClient.PostAsJsonAsync("/api/machines/register", machine, _jsonOptions);
+                var json = JsonSerializer.Serialize(machine);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                
+                var response = await _httpClient.PostAsync("api/machines", content);
                 response.EnsureSuccessStatusCode();
-                _logger.LogInformation("Machine {MachineId} registered successfully", machine.MachineId);
+                
+                _logger.LogInformation("Machine registered successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to register machine {MachineId}", machine.MachineId);
+                _logger.LogError(ex, "Failed to register machine");
                 throw;
             }
         }
@@ -56,8 +101,7 @@ namespace MachineClient.WPF.Services
         {
             try
             {
-                var heartbeat = new { MachineId = machineId, Timestamp = DateTime.UtcNow };
-                var response = await _httpClient.PostAsJsonAsync("/api/machines/heartbeat", heartbeat, _jsonOptions);
+                var response = await _httpClient.PostAsync($"api/machines/{machineId}/heartbeat", null);
                 response.EnsureSuccessStatusCode();
             }
             catch (Exception ex)
@@ -72,16 +116,17 @@ namespace MachineClient.WPF.Services
             try
             {
                 var logList = logs.ToList();
-                if (!logList.Any()) return;
-
-                var response = await _httpClient.PostAsJsonAsync("/api/logs/batch", logList, _jsonOptions);
+                var json = JsonSerializer.Serialize(logList);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                
+                var response = await _httpClient.PostAsync("api/logs", content);
                 response.EnsureSuccessStatusCode();
                 
-                _logger.LogInformation("Sent {Count} log entries to server", logList.Count);
+                _logger.LogInformation("Sent {LogCount} logs successfully", logList.Count);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send logs to server");
+                _logger.LogError(ex, "Failed to send logs");
                 throw;
             }
         }
@@ -90,16 +135,18 @@ namespace MachineClient.WPF.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"/api/commands/pending/{machineId}");
+                var response = await _httpClient.GetAsync($"api/commands/{machineId}/pending");
                 response.EnsureSuccessStatusCode();
                 
-                var commands = await response.Content.ReadFromJsonAsync<List<Command>>(_jsonOptions);
-                return commands ?? new List<Command>();
+                var json = await response.Content.ReadAsStringAsync();
+                var commands = JsonSerializer.Deserialize<List<Command>>(json) ?? new List<Command>();
+                
+                return commands;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to get pending commands for machine {MachineId}", machineId);
-                return new List<Command>();
+                throw;
             }
         }
 
@@ -107,13 +154,16 @@ namespace MachineClient.WPF.Services
         {
             try
             {
-                var update = new { Status = status, Result = result, ExecutedAt = DateTime.UtcNow };
-                var response = await _httpClient.PutAsJsonAsync($"/api/commands/{commandId}/status", update, _jsonOptions);
+                var data = new { Status = status, Result = result };
+                var json = JsonSerializer.Serialize(data);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                
+                var response = await _httpClient.PutAsync($"api/commands/{commandId}/status", content);
                 response.EnsureSuccessStatusCode();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to update command {CommandId} status", commandId);
+                _logger.LogError(ex, "Failed to update command status for command {CommandId}", commandId);
                 throw;
             }
         }
@@ -122,10 +172,11 @@ namespace MachineClient.WPF.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"/api/machines/{machineId}/configuration");
+                var response = await _httpClient.GetAsync($"api/configuration/{machineId}");
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadFromJsonAsync<ClientConfiguration>(_jsonOptions);
+                    var json = await response.Content.ReadAsStringAsync();
+                    return JsonSerializer.Deserialize<ClientConfiguration>(json);
                 }
                 return null;
             }

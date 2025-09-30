@@ -3,36 +3,72 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MachineManagement.Core.Entities
 {
-    [Table("LOGDATA")]
+    [Table("log_data")]
     public class LogData : BaseEntity
     {
-        [Key]
-        public long LogId { get; set; }
+        public int LogId { get; set; }
         
         [Required]
+        [ForeignKey(nameof(LogFile))]
+        public int FileId { get; set; }
+        
+        [Required]
+        [ForeignKey(nameof(Machine))]
         public int MachineId { get; set; }
         
-        [Required, StringLength(50)]
-        public string LogType { get; set; } = string.Empty;
+        [ForeignKey(nameof(Station))]
+        public int? StationId { get; set; }
         
-        [Required, StringLength(100)]
-        public string LogLevel { get; set; } = string.Empty;
+        [ForeignKey(nameof(Model))]
+        public int? ModelId { get; set; }
+        
+        public string? Eqpinfo { get; set; }
+        
+        public string? Procinfo { get; set; }
         
         [Required]
-        public string Message { get; set; } = string.Empty;
+        public string Pid { get; set; } = string.Empty;
         
-        public string? Details { get; set; }
+        public string? Fid { get; set; }
+        
+        public string? PartNo { get; set; }
+        
+        public string? Variant { get; set; }
         
         [Required]
-        public DateTime LogTimestamp { get; set; }
+        public string Result { get; set; } = string.Empty;
         
-        [StringLength(100)]
+        [Required]
+        public string Jobfile { get; set; } = string.Empty;
+        
+        [Required]
+        public string GmesStatus { get; set; } = string.Empty;
+        
+        [Required]
+        public DateTime StartTime { get; set; }
+        
+        public DateTime? EndTime { get; set; }
+        
+        public string? StepNg { get; set; }
+        
+        public string? Measure { get; set; }
+        
+        public string? SpecMin { get; set; }
+        
+        public string? SpecMax { get; set; }
+        
+        public string? LogLevel { get; set; }
+        
         public string? Source { get; set; }
         
-        [StringLength(100)]
-        public string? Category { get; set; }
+        public string? RawData { get; set; }
         
-        // Navigation property
+        public DateTime? ReceivedTime { get; set; }
+        
+        // Navigation properties
+        public virtual LogFile LogFile { get; set; } = null!;
         public virtual Machine Machine { get; set; } = null!;
+        public virtual Model? Model { get; set; }
+        public virtual Station? Station { get; set; }
     }
 }

@@ -1,212 +1,130 @@
-# UI Automation Integration Guide for MachineClient.WPF
+# Hướng dẫn sử dụng UI Automation trong Machine Client WPF
 
-This document explains how UI Automation has been integrated into the MachineClient.WPF application using the FlaUI.Automation.Extensions library.
+## Tổng quan
+Ứng dụng Machine Client WPF đã được tích hợp hệ thống UI Automation sử dụng **FlaUI**, cho phép:
+- Tự động click button
+- Đọc text từ các elements (TextBlock, Label, TextBox, ComboBox)
+- Tương tác với ComboBox và Menu
+- Theo dõi sự thay đổi của TextBlock elements
+- Monitor Pin Count changes với event triggers
 
-## Overview
+## Kiến trúc UI Automation
 
-The WPF application now includes comprehensive UI automation capabilities that allow:
-- External applications to control the WPF interface
-- Automated testing and monitoring
-- Cross-application integration
-- Real-time element monitoring
+### 1. Services được triển khai:
+- **IUIAutomationService** - Service cơ bản cho automation
+- **IPinCountMonitoringService** - Service chuyên dụng cho pin count monitoring
+- **IUIAutomationDemoService** - Service demo tất cả tính năng
 
-## Integration Details
-
-### 1. Library Reference
-
-The project references the FlaUI.Automation.Extensions library:
-
+### 2. AutomationIds đã được thêm vào:
 ```xml
-<ProjectReference Include="..\..\Libraries\FlaUI.Automation.Extensions\FlaUI.Automation.Extensions.csproj" />
+<!-- Backup buttons -->
+StartBackupButton
+StopBackupButton
+
+<!-- TextBlocks -->
+MachineIdTextBlock
+BackupStatusTextBlock
+BackupProgressTextBlock
+
+<!-- Demo buttons -->
+DemoAllFeaturesButton
+StartPinMonitoringButton
+StopPinMonitoringButton
+AutoClickBackupButton
+ReadMachineIdButton
 ```
 
-### 2. Service Registration (App.xaml.cs)
+## Cách sử dụng
 
-```csharp
-// UI Automation Services (from library)
-services.AddUIAutomation();
-```
+### 1. Demo tất cả tính năng:
+- Click nút **"Demo All Features"** để test toàn bộ UI automation
+- Xem kết quả trong Activity Log
 
-This registers all automation services:
-- `IUIAutomationService` - Core automation operations
-- `IElementMonitoringService` - Real-time element monitoring
-- `IAutomationDemoService` - Comprehensive demo capabilities
+### 2. Pin Count Monitoring:
+- Click **"Start Pin Monitoring"** để bắt đầu theo dõi
+- Service sẽ monitor changes trong BackupStatusTextBlock
+- Click **"Stop Pin Monitoring"** để dừng
 
-### 3. ViewModel Integration (MainViewModel.cs)
+### 3. Auto Click Backup:
+- Click **"Auto Click Backup"** để tự động click nút Start Backup
+- Kiểm tra log để xem kết quả
 
-```csharp
-public partial class MainViewModel : ObservableObject
-{
-    private readonly IUIAutomationService _uiAutomationService;
-    private readonly IElementMonitoringService _elementMonitoringService;
-    private readonly IAutomationDemoService _automationDemoService;
+### 4. Read Machine ID:
+- Click **"Read Machine ID"** để đọc Machine ID từ UI element
+- Text được đọc sẽ hiển thị trong log
 
-    public MainViewModel(
-        /* other services */,
-        IUIAutomationService uiAutomationService,
-        IElementMonitoringService elementMonitoringService,
-        IAutomationDemoService automationDemoService)
-    {
-        _uiAutomationService = uiAutomationService;
-        _elementMonitoringService = elementMonitoringService;
-        _automationDemoService = automationDemoService;
-        
-        // Subscribe to automation events
-        _automationDemoService.DemoProgress += OnAutomationDemoProgress;
-    }
-}
-```
+## Cách mở rộng
 
-### 4. AutomationId Properties
-
-All interactive UI elements have AutomationId set for reliable automation:
-
+### Thêm AutomationId cho elements mới:
 ```xml
-<!-- Buttons -->
-<Button AutomationProperties.AutomationId="StartBackupButton" />
-<Button AutomationProperties.AutomationId="StopBackupButton" />
-<Button AutomationProperties.AutomationId="DemoAllFeaturesButton" />
-
-<!-- Text Elements -->
-<TextBlock AutomationProperties.AutomationId="MachineIdTextBlock" />
-<TextBlock AutomationProperties.AutomationId="BackupStatusTextBlock" />
-<TextBlock AutomationProperties.AutomationId="BackupProgressTextBlock" />
-
-<!-- Progress Elements -->
-<ProgressBar AutomationProperties.AutomationId="BackupProgressBar" />
+<Button AutomationProperties.AutomationId="MyButtonId"
+        AutomationProperties.Name="My Button Name"
+        Content="My Button"/>
 ```
 
-## Available Automation Commands
-
-### Button Automation
+### Sử dụng UI Automation Service:
 ```csharp
-// Click start backup button
-var clicked = await _uiAutomationService.ClickButtonAsync("StartBackupButton");
+// Click button
+await _uiAutomationService.ClickButtonAsync("MyButtonId");
 
-// Click stop backup button
-var stopped = await _uiAutomationService.ClickButtonAsync("StopBackupButton");
+// Read text
+var text = await _uiAutomationService.ReadTextAsync("MyTextBlockId");
 
-// Run demo features
-var demo = await _uiAutomationService.ClickButtonAsync("DemoAllFeaturesButton");
+// Monitor text changes
+await _uiAutomationService.StartTextBlockMonitoringAsync("MyTextBlockId", 
+    newText => Console.WriteLine($"Text changed to: {newText}"));
 ```
 
-### Text Reading
+### Tạo custom monitoring:
 ```csharp
-// Read machine information
-var machineId = await _uiAutomationService.ReadTextAsync("MachineIdTextBlock");
-var status = await _uiAutomationService.ReadTextAsync("BackupStatusTextBlock");
-var progress = await _uiAutomationService.ReadTextAsync("BackupProgressTextBlock");
-```
-
-### Element Monitoring
-```csharp
-// Start monitoring backup status changes
-_elementMonitoringService.ElementChanged += (sender, e) => {
-    Console.WriteLine($"Status changed: {e.NewValue}");
+// Subscribe to pin count changes
+_pinCountMonitoringService.PinCountChanged += (sender, e) => {
+    Console.WriteLine($"Pin count changed from {e.PreviousValue} to {e.NewValue}");
 };
 
-await _elementMonitoringService.StartMonitoringAsync("BackupStatusTextBlock");
+// Start monitoring
+await _pinCountMonitoringService.StartMonitoringAsync();
 ```
 
-### Demo Features
-```csharp
-// Run comprehensive demo
-await _automationDemoService.InitializeAndTestAsync();
+## Lưu ý quan trọng
 
-// Get debug information
-var debugInfo = await _automationDemoService.GetDebugInfoAsync();
-```
-
-## External Integration Examples
-
-### Console Application
-See `UIAutomationConsoleDemo` project for complete example of controlling the WPF app from a console application.
-
-### PowerShell Integration
-```powershell
-# Example PowerShell script to interact with the WPF app
-# (Would require .NET interop setup)
-```
-
-### Web API Integration
-```csharp
-// Example: Web API controller that controls WPF app
-[HttpPost("backup/start")]
-public async Task<IActionResult> StartBackup()
-{
-    var success = await _uiAutomationService.ClickButtonAsync("StartBackupButton");
-    return Ok(new { Success = success });
-}
-```
-
-## Testing Integration
-
-### Unit Testing
-```csharp
-[Test]
-public async Task CanClickStartBackupButton()
-{
-    // Arrange
-    var mockAutomation = new Mock<IUIAutomationService>();
-    mockAutomation.Setup(x => x.ClickButtonAsync("StartBackupButton", true))
-              .ReturnsAsync(true);
-    
-    // Act
-    var result = await mockAutomation.Object.ClickButtonAsync("StartBackupButton");
-    
-    // Assert
-    Assert.IsTrue(result);
-}
-```
-
-### Integration Testing
-```csharp
-[Test]
-public async Task CanReadMachineId()
-{
-    // Arrange
-    await _automation.InitializeAsync("MachineClient.WPF");
-    
-    // Act
-    var machineId = await _automation.ReadTextAsync("MachineIdTextBlock");
-    
-    // Assert
-    Assert.IsNotEmpty(machineId);
-}
-```
-
-## Best Practices
-
-1. **Use AutomationId**: Always set AutomationId for elements that need automation
-2. **Error Handling**: Check return values from automation methods
-3. **Initialization**: Initialize automation service once per session
-4. **Resource Cleanup**: Dispose services properly when done
-5. **Thread Safety**: All automation operations are thread-safe
+1. **Element Identification**: FlaUI tìm elements theo AutomationId đầu tiên, sau đó fallback về Name
+2. **Threading**: Tất cả UI operations phải chạy trên UI thread
+3. **Error Handling**: Services có comprehensive error handling và logging
+4. **Performance**: Text monitoring sử dụng timer với interval 500ms
+5. **Disposal**: Nhớ dispose automation services khi thoát app
 
 ## Troubleshooting
 
-### Element Not Found
-- Verify AutomationId is set correctly
-- Check element is visible and loaded
-- Try using Name fallback: `useAutomationId: false`
+### Element không tìm thấy:
+- Kiểm tra AutomationId đã được set chưa
+- Kiểm tra element có visible không
+- Thử sử dụng Name thay vì AutomationId
 
-### Connection Issues
-- Ensure WPF application is running
-- Check process name matches exactly
-- Verify UI automation is initialized
+### Timer issues:
+- Kiểm tra timer đã được disposed chưa
+- Verify element vẫn còn tồn tại
 
-### Performance Issues
-- Reduce monitoring intervals if needed
-- Limit concurrent automation operations
-- Use specific element identifiers
+### Performance issues:
+- Tăng monitoring interval nếu cần
+- Optimize element finding logic
+- Reduce số lượng concurrent monitors
 
-## Architecture Benefits
+## Demo Commands đã có sẵn
 
-✅ **Separation of Concerns** - Automation logic in separate library  
-✅ **Reusable Components** - Library can be used in any .NET project  
-✅ **Testable Code** - Easy to mock interfaces for testing  
-✅ **Maintainable** - Single place for automation logic updates  
-✅ **Extensible** - Easy to add new automation capabilities  
-✅ **Cross-Project Usage** - Same library works for console, web, desktop apps  
+1. **TestUIAutomationCommand** - Demo comprehensive functionality
+2. **StartPinCountMonitoringCommand** - Start pin monitoring
+3. **StopPinCountMonitoringCommand** - Stop monitoring  
+4. **AutoClickBackupButtonCommand** - Auto click backup button
+5. **ReadMachineIdCommand** - Read machine ID from UI
 
-This integration makes the WPF application fully controllable from external applications while maintaining clean separation between UI and automation concerns.
+## Log Messages
+
+Service sẽ ghi log các thông tin sau:
+- ✅ Success operations
+- ⚠️ Warning messages  
+- ❌ Error messages
+- 🔄 Operation in progress
+- 📍 Pin count changes
+
+Tất cả log messages sẽ hiển thị trong Activity Log section của ứng dụng.

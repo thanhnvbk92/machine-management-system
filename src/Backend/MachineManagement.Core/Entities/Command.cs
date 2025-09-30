@@ -3,37 +3,40 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MachineManagement.Core.Entities
 {
-    [Table("COMMANDS")]
+    [Table("commands")]
     public class Command : BaseEntity
     {
-        [Key]
         public int CommandId { get; set; }
         
-        [Required]
-        public int MachineId { get; set; }
+        [ForeignKey(nameof(Machine))]
+        public int? MachineId { get; set; }
         
-        [Required, StringLength(100)]
+        [ForeignKey(nameof(Station))]
+        public int? StationId { get; set; }
+        
+        [Required, StringLength(255)]
         public string CommandType { get; set; } = string.Empty;
         
-        [Required]
-        public string CommandData { get; set; } = string.Empty;
+        [StringLength(255)]
+        public string? ProgramName { get; set; }
         
-        [Required, StringLength(20)]
-        public string Status { get; set; } = "Pending";
+        public string? Parameters { get; set; }
         
-        public DateTime? ExecutedAt { get; set; }
+        [StringLength(50)]
+        public string? Status { get; set; }
         
-        public string? Response { get; set; }
+        public int? Priority { get; set; }
         
-        [StringLength(500)]
-        public string? ErrorMessage { get; set; }
+        public DateTime? CreatedTime { get; set; }
         
-        [Required]
-        public int Priority { get; set; } = 1;
+        public DateTime? SentTime { get; set; }
         
-        public DateTime? ScheduledAt { get; set; }
+        public DateTime? ExecutedTime { get; set; }
         
-        // Navigation property
-        public virtual Machine Machine { get; set; } = null!;
+        public string? ResultMessage { get; set; }
+        
+        // Navigation properties
+        public virtual Machine? Machine { get; set; }
+        public virtual Station? Station { get; set; }
     }
 }
