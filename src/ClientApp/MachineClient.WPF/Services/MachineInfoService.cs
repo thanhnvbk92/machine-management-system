@@ -2,6 +2,8 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
+using Microsoft.Extensions.Options;
+using MachineClient.WPF.Models;
 
 namespace MachineClient.WPF.Services;
 
@@ -17,6 +19,13 @@ public interface IMachineInfoService
 
 public class MachineInfoService : IMachineInfoService
 {
+    private readonly ApiSettings _apiSettings;
+
+    public MachineInfoService(IOptions<ApiSettings> apiSettings)
+    {
+        _apiSettings = apiSettings.Value;
+    }
+
     public string GetMacAddress()
     {
         try
@@ -47,13 +56,22 @@ public class MachineInfoService : IMachineInfoService
     {
         try
         {
-            // Get local IP address (not loopback)
+            // Get all local IP addresses (not loopback)
             var host = Dns.GetHostEntry(Dns.GetHostName());
-            var localIP = host.AddressList
-                .FirstOrDefault(ip => ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && 
-                                     !IPAddress.IsLoopback(ip));
+            var allIPs = host.AddressList
+                .Where(ip => ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && 
+                            !IPAddress.IsLoopback(ip))
+                .ToList();
 
-            return localIP?.ToString() ?? "127.0.0.1";
+            if (!allIPs.Any())
+                return "127.0.0.1";
+
+            // Ưu tiên IP theo dải được cấu hình (mặc định: 10.224.xxx.xxx)
+            var preferredIP = allIPs.FirstOrDefault(ip => 
+                ip.ToString().StartsWith(_apiSettings.PreferredIpPrefix));
+
+            // Nếu có IP thuộc dải ưu tiên thì trả về, nếu không thì lấy IP đầu tiên
+            return preferredIP?.ToString() ?? allIPs.First().ToString();
         }
         catch
         {

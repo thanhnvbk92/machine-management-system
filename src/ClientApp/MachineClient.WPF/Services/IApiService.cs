@@ -9,6 +9,7 @@ namespace MachineClient.WPF.Services
     {
         Task<bool> TestConnectionAsync();
         Task<MachineRegistrationResponse> RegisterMachineAsync(MachineRegistrationRequest request);
+        Task<MacUpdateResponse> UpdateMacAddressAsync(MacUpdateRequest request);
         Task SendHeartbeatAsync(string machineId);
         Task SendLogsAsync(IEnumerable<LogData> logs);
         Task<IEnumerable<Command>> GetPendingCommandsAsync(string machineId);

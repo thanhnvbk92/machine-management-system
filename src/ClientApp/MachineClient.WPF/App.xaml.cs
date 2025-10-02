@@ -14,6 +14,8 @@ using MachineClient.WPF.Services;
 using MachineClient.WPF.ViewModels;
 using MachineClient.WPF.Views;
 using FlaUI.Automation.Extensions;
+using Serilog;
+using Serilog.Extensions.Hosting;
 
 namespace MachineClient.WPF
 {
@@ -151,12 +153,30 @@ namespace MachineClient.WPF
         private IHostBuilder CreateHostBuilder()
         {
             return Host.CreateDefaultBuilder()
+                .UseSerilog((context, loggerConfig) =>
+                {
+                    loggerConfig
+                        .MinimumLevel.Information()
+                        .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+                        .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
+                        .Enrich.FromLogContext()
+                        .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+                        .WriteTo.Debug()
+                        .WriteTo.File(
+                            path: "Logs/client-.log",
+                            rollingInterval: RollingInterval.Day,
+                            retainedFileCountLimit: 30,
+                            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}"
+                        );
+                })
                 .ConfigureServices((context, services) =>
                 {
-                    // Configure ApiSettings
+                    // Configure ApiSettings with IOptions pattern
+                    services.Configure<ApiSettings>(context.Configuration.GetSection("ApiSettings"));
+                    
+                    // Also register as singleton for backward compatibility
                     var apiSettings = new ApiSettings();
                     context.Configuration.GetSection("ApiSettings").Bind(apiSettings);
-                    services.AddSingleton(apiSettings);
                     
                     // HTTP Client Factory
                     services.AddHttpClient("API", client =>
@@ -172,22 +192,24 @@ namespace MachineClient.WPF
                     services.AddSingleton<IMachineInfoService, MachineInfoService>();
                     services.AddSingleton<IBackupService, BackupService>();
                     
+                    // Clean Architecture Services
+                    services.AddSingleton<IMachineConnectionService, MachineConnectionService>();
+                    services.AddSingleton<IBackupManager, BackupManager>();
+                    services.AddSingleton<IUIStateManager, UIStateManager>();
+                    services.AddSingleton<IApplicationSettingsService, ApplicationSettingsService>();
+                    
                     // UI Automation Services (from library)
                     services.AddUIAutomation();
                     
-                    // ViewModels
-                    services.AddTransient<MainViewModel>();
+                    // ViewModels (Page-based architecture)
+                    services.AddTransient<HomeViewModel>();
+                    services.AddTransient<SettingsViewModel>();
+                    services.AddTransient<AboutViewModel>();
+                    services.AddTransient<NavigationViewModel>();
+                    services.AddTransient<MainViewModel>(); // Shell ViewModel
                     
                     // Views
                     services.AddTransient<MainWindow>();
-                    
-                    // Logging
-                    services.AddLogging(builder =>
-                    {
-                        builder.AddConsole();
-                        builder.AddDebug();
-                        builder.SetMinimumLevel(LogLevel.Information);
-                    });
                 });
         }
     }

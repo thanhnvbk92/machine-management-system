@@ -24,12 +24,22 @@ namespace MachineClient.WPF.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync("api/health");
-                return response.IsSuccessStatusCode;
+                _logger.LogInformation("ApiService.TestConnectionAsync - Starting connection test to API");
+                
+                // Sử dụng endpoint machines thay vì health
+                _logger.LogInformation("ApiService.TestConnectionAsync - Making HTTP GET request to 'api/machines'");
+                var response = await _httpClient.GetAsync("api/machines");
+                
+                _logger.LogInformation("ApiService.TestConnectionAsync - Received response with status: {StatusCode}", response.StatusCode);
+                
+                var isSuccess = response.IsSuccessStatusCode;
+                _logger.LogInformation("ApiService.TestConnectionAsync - Connection test result: {Success}", isSuccess);
+                
+                return isSuccess;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Connection test failed");
+                _logger.LogError(ex, "ApiService.TestConnectionAsync - Connection test failed with exception: {Message}", ex.Message);
                 return false;
             }
         }
@@ -53,14 +63,34 @@ namespace MachineClient.WPF.Services
                     PropertyNameCaseInsensitive = true
                 };
                 
-                var result = JsonSerializer.Deserialize<MachineRegistrationResponse>(responseJson, options) ?? new MachineRegistrationResponse();
+                MachineRegistrationResponse result;
                 
                 if (response.IsSuccessStatusCode)
                 {
-                    _logger.LogInformation("Machine registration successful for IP: {IP}, MAC: {MAC}", request.IP, request.MacAddress);
+                    result = JsonSerializer.Deserialize<MachineRegistrationResponse>(responseJson, options) ?? new MachineRegistrationResponse();
+                    
+                    if (result.IsNewMachine)
+                    {
+                        _logger.LogInformation("New machine registered successfully for IP: {IP}, MAC: {MAC}", request.IP, request.MacAddress);
+                    }
+                    else if (result.RequiresMacUpdate)
+                    {
+                        _logger.LogInformation("IP {IP} exists with different MAC - requires MAC update", request.IP);
+                    }
+                    else
+                    {
+                        _logger.LogInformation("Machine found for IP: {IP}, MAC: {MAC}", request.IP, request.MacAddress);
+                    }
                 }
                 else
                 {
+                    // Fallback cho các lỗi khác
+                    result = new MachineRegistrationResponse
+                    {
+                        IsSuccess = false,
+                        Message = $"Registration failed: {responseJson}"
+                    };
+                    
                     _logger.LogWarning("Machine registration failed: {Message}", result.Message);
                 }
                 
@@ -73,6 +103,49 @@ namespace MachineClient.WPF.Services
                 {
                     IsSuccess = false,
                     Message = $"Registration error: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<MacUpdateResponse> UpdateMacAddressAsync(MacUpdateRequest request)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                
+                _logger.LogInformation("Sending MAC update request: IP={IP}, NewMAC={NewMAC}", request.IP, request.NewMacAddress);
+                
+                var response = await _httpClient.PutAsync("api/machines/update-mac", content);
+                
+                var responseJson = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation("MAC update response - Status: {Status}, Body: {Body}", response.StatusCode, responseJson);
+                
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                
+                var result = JsonSerializer.Deserialize<MacUpdateResponse>(responseJson, options) ?? new MacUpdateResponse();
+                
+                if (response.IsSuccessStatusCode && result.IsSuccess)
+                {
+                    _logger.LogInformation("MAC address updated successfully for IP: {IP}", request.IP);
+                }
+                else
+                {
+                    _logger.LogWarning("MAC update failed: {Message}", result.Message);
+                }
+                
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "MAC update failed for IP: {IP}", request.IP);
+                return new MacUpdateResponse
+                {
+                    IsSuccess = false,
+                    Message = $"MAC update error: {ex.Message}"
                 };
             }
         }

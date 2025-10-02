@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:userControls="clr-namespace:MachineClient.WPF.Views.UserControls"
+        xmlns:converters="clr-namespace:MachineClient.WPF.Converters"
         Title="Machine Management Client" 
         Height="620" Width="900"
         MinHeight="550" MinWidth="800"
@@ -11,6 +12,7 @@
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <converters:DebugConverter x:Key="DebugConverter"/>
     </Window.Resources>
 
     <Grid>
@@ -503,15 +505,74 @@
         <!-- Main Content Area -->
         <Grid Grid.Column="1">
             
+            <!-- Debug info (temporary) - Comment out for clean UI -->
+            <!--
+            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top" Margin="10">
+                <TextBlock Text="{Binding SelectedPage, StringFormat='Current Page: {0}'}" 
+                           Background="Yellow" Foreground="Black"
+                           Padding="5" FontSize="12"/>
+                <TextBlock Text="{Binding GetType.Name, StringFormat='DataContext: {0}'}" 
+                           Background="Orange" Foreground="Black"
+                           Padding="5" FontSize="10"/>
+                
+                <TextBlock Text="{Binding IsHomePage, Converter={StaticResource DebugConverter}, ConverterParameter='IsHomePage_UI', StringFormat='IsHomePage: {0}'}" 
+                           Background="LightGreen" Foreground="Black"
+                           Padding="5" FontSize="10"/>
+                <TextBlock Text="{Binding IsSettingsPage, Converter={StaticResource DebugConverter}, ConverterParameter='IsSettingsPage_UI', StringFormat='IsSettingsPage: {0}'}" 
+                           Background="LightBlue" Foreground="Black"
+                           Padding="5" FontSize="10"/>
+                <TextBlock Text="{Binding IsAboutPage, Converter={StaticResource DebugConverter}, ConverterParameter='IsAboutPage_UI', StringFormat='IsAboutPage: {0}'}" 
+                           Background="LightPink" Foreground="Black"
+                           Padding="5" FontSize="10"/>
+                           
+                <Button Content="TEST HOME" Command="{Binding NavigateToHomeCommand}" 
+                        Background="Red" Foreground="White" Margin="0,5,0,0"/>
+                <Button Content="TEST SETTINGS" Command="{Binding NavigateToSettingsCommand}" 
+                        Background="Blue" Foreground="White" Margin="0,2,0,0"/>
+                <Button Content="TEST ABOUT" Command="{Binding NavigateToAboutCommand}" 
+                        Background="Green" Foreground="White" Margin="0,2,0,0"/>
+            </StackPanel>
+            -->
+            
             <!-- Content Pages -->
-            <userControls:HomePage Visibility="{Binding IsHomePage, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                   DataContext="{Binding}"/>
+            <userControls:HomePage DataContext="{Binding Home}">
+                <userControls:HomePage.Style>
+                    <Style TargetType="userControls:HomePage">
+                        <Setter Property="Visibility" Value="Visible"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.IsHomePage}" Value="False">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </userControls:HomePage.Style>
+            </userControls:HomePage>
             
-            <userControls:SettingsPage Visibility="{Binding IsSettingsPage, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                       DataContext="{Binding}"/>
+            <userControls:SettingsPage DataContext="{Binding Settings}">
+                <userControls:SettingsPage.Style>
+                    <Style TargetType="userControls:SettingsPage">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.IsSettingsPage}" Value="True">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </userControls:SettingsPage.Style>
+            </userControls:SettingsPage>
             
-            <userControls:AboutPage Visibility="{Binding IsAboutPage, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                    DataContext="{Binding}"/>
+            <userControls:AboutPage DataContext="{Binding About}">
+                <userControls:AboutPage.Style>
+                    <Style TargetType="userControls:AboutPage">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.IsAboutPage}" Value="True">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </userControls:AboutPage.Style>
+            </userControls:AboutPage>
             
         </Grid>
         
