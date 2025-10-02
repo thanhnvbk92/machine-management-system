@@ -155,6 +155,8 @@ namespace MachineClient.WPF
             return Host.CreateDefaultBuilder()
                 .UseSerilog((context, loggerConfig) =>
                 {
+                    var logPath = $"Logs/{DateTime.Now:yyyy}/{DateTime.Now:MM}/client-{DateTime.Now:yyyy-MM-dd}.log";
+                    
                     loggerConfig
                         .MinimumLevel.Information()
                         .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
@@ -163,9 +165,10 @@ namespace MachineClient.WPF
                         .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
                         .WriteTo.Debug()
                         .WriteTo.File(
-                            path: "Logs/client-.log",
+                            path: logPath,
                             rollingInterval: RollingInterval.Day,
                             retainedFileCountLimit: 30,
+                            shared: true,
                             outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}"
                         );
                 })
