@@ -8,24 +8,23 @@ namespace MachineManagement.Infrastructure.Data
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
         
         // DbSets for all entities
-        public DbSet<Buyer> Buyers { get; set; }
         public DbSet<Line> Lines { get; set; }
-        public DbSet<MachineType> MachineTypes { get; set; }
-        public DbSet<ModelGroup> ModelGroups { get; set; }
-        public DbSet<Model> Models { get; set; }
-        public DbSet<ModelProcess> ModelProcesses { get; set; }
         public DbSet<Station> Stations { get; set; }
         public DbSet<Machine> Machines { get; set; }
-        public DbSet<LogFile> LogFiles { get; set; }
         public DbSet<LogData> LogData { get; set; }
         public DbSet<Command> Commands { get; set; }
         public DbSet<ClientConfig> ClientConfigs { get; set; }
+        public DbSet<Buyer> Buyers { get; set; }
+        public DbSet<ModelGroup> ModelGroups { get; set; }
+        public DbSet<ModelProcess> ModelProcesses { get; set; }
+        public DbSet<MachineType> MachineTypes { get; set; }
+        public DbSet<Model> Models { get; set; }
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
             
-            // Configure basic relationships that exist
+            // Configure relationships
             
             // Machine -> Station relationship
             modelBuilder.Entity<Machine>()
@@ -48,11 +47,32 @@ namespace MachineManagement.Infrastructure.Data
                 .HasForeignKey(s => s.LineId)
                 .OnDelete(DeleteBehavior.Restrict);
                 
-            // Buyer -> ModelGroup relationship (cập nhật theo database thực tế)
+            // Station -> ModelProcess relationship
+            modelBuilder.Entity<Station>()
+                .HasOne(s => s.ModelProcess)
+                .WithMany(mp => mp.Stations)
+                .HasForeignKey(s => s.ModelProcessId)
+                .OnDelete(DeleteBehavior.Restrict);
+                
+            // ModelProcess -> ModelGroup relationship
+            modelBuilder.Entity<ModelProcess>()
+                .HasOne(mp => mp.ModelGroup)
+                .WithMany(mg => mg.ModelProcesses)
+                .HasForeignKey(mp => mp.ModelGroupId)
+                .OnDelete(DeleteBehavior.Restrict);
+                
+            // ModelGroup -> Buyer relationship
             modelBuilder.Entity<ModelGroup>()
                 .HasOne(mg => mg.Buyer)
                 .WithMany(b => b.ModelGroups)
                 .HasForeignKey(mg => mg.BuyerId)
+                .OnDelete(DeleteBehavior.Restrict);
+                
+            // Model -> ModelGroup relationship
+            modelBuilder.Entity<Model>()
+                .HasOne(m => m.ModelGroup)
+                .WithMany(mg => mg.Models)
+                .HasForeignKey(m => m.ModelGroupId)
                 .OnDelete(DeleteBehavior.Restrict);
                 
             // ClientConfig primary key configuration
@@ -66,14 +86,6 @@ namespace MachineManagement.Infrastructure.Data
             // LogData primary key configuration
             modelBuilder.Entity<LogData>()
                 .HasKey(ld => ld.LogId);
-                
-            // Machine configuration to ignore BaseEntity properties that don't exist in database
-            modelBuilder.Entity<Machine>()
-                .Ignore(m => m.CreatedAt)
-                .Ignore(m => m.UpdatedAt)
-                .Ignore(m => m.IsActive);
-                
-            // Remove index cho SerialNumber vì không còn field này trong Machine entity
         }
     }
 }

@@ -4,8 +4,11 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace MachineManagement.Core.Entities
 {
     [Table("buyers")]
-    public class Buyer : BaseEntity
+    public class Buyer
     {
+        [Key]
+        [Column("ID")]
+        public int Id { get; set; }
         [Required]
         [MaxLength(255)]
         public string Code { get; set; } = string.Empty;

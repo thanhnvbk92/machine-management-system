@@ -4,8 +4,11 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace MachineManagement.Core.Entities
 {
     [Table("modelgroups")]
-    public class ModelGroup : BaseEntity
+    public class ModelGroup
     {
+        [Key]
+        [Column("ID")]
+        public int Id { get; set; }
         [Required]
         [MaxLength(255)]
         public string Name { get; set; } = string.Empty;

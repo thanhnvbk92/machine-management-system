@@ -4,24 +4,22 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace MachineManagement.Core.Entities
 {
     [Table("models")]
-    public class Model : BaseEntity
+    public class Model
     {
-        [Required]
-        [MaxLength(255)]
-        public string Name { get; set; } = string.Empty;
+        [Key]
+        [Column("ID")]
+        public int Id { get; set; }
         
-        public string? Description { get; set; }
+        [Required]
+        [MaxLength(50)]
+        public string Name { get; set; } = string.Empty;
         
         [Required]
         [ForeignKey(nameof(ModelGroup))]
+        [Column("ModelGroupID")]
         public int ModelGroupId { get; set; }
-        
-        [Required]
-        public bool IsActive { get; set; } = true;
         
         // Navigation properties
         public virtual ModelGroup ModelGroup { get; set; } = null!;
-        public virtual ICollection<ModelProcess> ModelProcesses { get; set; } = new List<ModelProcess>();
-        public virtual ICollection<LogData> LogData { get; set; } = new List<LogData>();
     }
 }

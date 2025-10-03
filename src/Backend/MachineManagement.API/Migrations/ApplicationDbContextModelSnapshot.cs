@@ -51,7 +51,7 @@ namespace MachineManagement.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("buyers");
+                    b.ToTable("buyers", (string)null);
                 });
 
             modelBuilder.Entity("MachineManagement.Core.Entities.ClientConfig", b =>
@@ -95,7 +95,7 @@ namespace MachineManagement.API.Migrations
 
                     b.HasIndex("MachineId");
 
-                    b.ToTable("client_config");
+                    b.ToTable("client_config", (string)null);
                 });
 
             modelBuilder.Entity("MachineManagement.Core.Entities.Command", b =>
@@ -161,7 +161,7 @@ namespace MachineManagement.API.Migrations
 
                     b.HasIndex("StationId");
 
-                    b.ToTable("commands");
+                    b.ToTable("commands", (string)null);
                 });
 
             modelBuilder.Entity("MachineManagement.Core.Entities.Line", b =>
@@ -196,7 +196,7 @@ namespace MachineManagement.API.Migrations
 
                     b.HasIndex("BuyerId");
 
-                    b.ToTable("lines");
+                    b.ToTable("lines", (string)null);
                 });
 
             modelBuilder.Entity("MachineManagement.Core.Entities.LogData", b =>
@@ -302,7 +302,7 @@ namespace MachineManagement.API.Migrations
 
                     b.HasIndex("StationId");
 
-                    b.ToTable("log_data");
+                    b.ToTable("log_data", (string)null);
                 });
 
             modelBuilder.Entity("MachineManagement.Core.Entities.LogFile", b =>
@@ -358,7 +358,7 @@ namespace MachineManagement.API.Migrations
 
                     b.HasIndex("MachineId");
 
-                    b.ToTable("log_file");
+                    b.ToTable("log_file", (string)null);
                 });
 
             modelBuilder.Entity("MachineManagement.Core.Entities.Machine", b =>
@@ -420,7 +420,7 @@ namespace MachineManagement.API.Migrations
 
                     b.HasIndex("StationId");
 
-                    b.ToTable("machines");
+                    b.ToTable("machines", (string)null);
                 });
 
             modelBuilder.Entity("MachineManagement.Core.Entities.MachineType", b =>
@@ -450,7 +450,7 @@ namespace MachineManagement.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("machinetypes");
+                    b.ToTable("machinetypes", (string)null);
                 });
 
             modelBuilder.Entity("MachineManagement.Core.Entities.Model", b =>
@@ -485,7 +485,7 @@ namespace MachineManagement.API.Migrations
 
                     b.HasIndex("ModelGroupId");
 
-                    b.ToTable("models");
+                    b.ToTable("models", (string)null);
                 });
 
             modelBuilder.Entity("MachineManagement.Core.Entities.ModelGroup", b =>
@@ -517,7 +517,7 @@ namespace MachineManagement.API.Migrations
 
                     b.HasIndex("BuyerId");
 
-                    b.ToTable("modelgroups");
+                    b.ToTable("modelgroups", (string)null);
                 });
 
             modelBuilder.Entity("MachineManagement.Core.Entities.ModelProcess", b =>
@@ -563,7 +563,7 @@ namespace MachineManagement.API.Migrations
 
                     b.HasIndex("StationId");
 
-                    b.ToTable("modelprocesses");
+                    b.ToTable("modelprocesses", (string)null);
                 });
 
             modelBuilder.Entity("MachineManagement.Core.Entities.Station", b =>
@@ -600,7 +600,7 @@ namespace MachineManagement.API.Migrations
 
                     b.HasIndex("ModelProcessId");
 
-                    b.ToTable("stations");
+                    b.ToTable("stations", (string)null);
                 });
 
             modelBuilder.Entity("MachineManagement.Core.Entities.ClientConfig", b =>

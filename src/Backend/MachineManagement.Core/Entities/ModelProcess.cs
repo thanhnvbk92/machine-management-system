@@ -4,28 +4,22 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace MachineManagement.Core.Entities
 {
     [Table("modelprocesses")]
-    public class ModelProcess : BaseEntity
+    public class ModelProcess
     {
+        [Key]
+        [Column("ID")]
+        public int Id { get; set; }
         [Required]
-        [ForeignKey(nameof(Model))]
-        public int ModelId { get; set; }
-        
-        [Required]
-        [ForeignKey(nameof(Station))]
-        public int StationId { get; set; }
-        
-        [Required]
-        public int ProcessOrder { get; set; }
-        
-        public decimal? CycleTime { get; set; }
-        
-        public string? Description { get; set; }
+        [MaxLength(255)]
+        public string Name { get; set; } = string.Empty;
         
         [Required]
-        public bool IsActive { get; set; } = true;
+        [ForeignKey(nameof(ModelGroup))]
+        [Column("ModelGroupID")]
+        public int ModelGroupId { get; set; }
         
         // Navigation properties
-        public virtual Model Model { get; set; } = null!;
-        public virtual Station Station { get; set; } = null!;
+        public virtual ModelGroup ModelGroup { get; set; } = null!;
+        public virtual ICollection<Station> Stations { get; set; } = new List<Station>();
     }
 }

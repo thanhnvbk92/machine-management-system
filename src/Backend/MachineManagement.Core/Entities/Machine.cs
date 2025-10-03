@@ -4,8 +4,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace MachineManagement.Core.Entities
 {
     [Table("machines")]
-    public class Machine : BaseEntity
+    public class Machine
     {
+        [Key]
+        [Column("ID")]
+        public int Id { get; set; }
+        
         [Required]
         [MaxLength(255)]
         public string Name { get; set; } = string.Empty;
@@ -13,18 +17,17 @@ namespace MachineManagement.Core.Entities
         [MaxLength(50)]
         public string? Status { get; set; }
         
-        [ForeignKey(nameof(MachineType))]
         public int? MachineTypeId { get; set; }
         
         [MaxLength(45)]
-        [Column("ip")]
+        [Column("IP")]
         public string? Ip { get; set; }
         
         [MaxLength(255)]
-        [Column("gmes_name")]
+        [Column("GMES_Name")]
         public string? GmesName { get; set; }
         
-        [ForeignKey(nameof(Station))]
+        [Column("StationID")]
         public int? StationId { get; set; }
         
         [MaxLength(255)]
@@ -57,6 +60,5 @@ namespace MachineManagement.Core.Entities
         public virtual ICollection<ClientConfig> ClientConfigs { get; set; } = new List<ClientConfig>();
         public virtual ICollection<Command> Commands { get; set; } = new List<Command>();
         public virtual ICollection<LogData> LogData { get; set; } = new List<LogData>();
-        public virtual ICollection<LogFile> LogFiles { get; set; } = new List<LogFile>();
     }
 }

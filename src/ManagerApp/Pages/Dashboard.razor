@@ -161,7 +161,7 @@
                                     <tr>
                                         <td>@machine.MachineName</td>
                                         <td>
-                                            <MudChip Color="@(machine.IsOnline ? Color.Success : Color.Error)" Size="Size.Small">
+                                            <MudChip T="string" Color="@(machine.IsOnline ? Color.Success : Color.Error)" Size="Size.Small">
                                                 @(machine.IsOnline ? "Online" : "Offline")
                                             </MudChip>
                                         </td>
@@ -202,7 +202,7 @@
                                         <td>@command.CommandType</td>
                                         <td>@command.MachineId</td>
                                         <td>
-                                            <MudChip Color="@GetCommandStatusColor(command.Status)" Size="Size.Small">
+                                            <MudChip T="string" Color="@GetCommandStatusColor(command.Status)" Size="Size.Small">
                                                 @command.Status
                                             </MudChip>
                                         </td>

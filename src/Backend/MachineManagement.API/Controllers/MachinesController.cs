@@ -41,6 +41,37 @@ public class MachinesController : ControllerBase
         }
     }
 
+    [HttpGet("debug/{macOrIp}")]
+    public async Task<ActionResult<object>> DebugMachine(string macOrIp)
+    {
+        try
+        {
+            _logger.LogInformation("Debug machine lookup for: {MacOrIp}", macOrIp);
+            
+            var machines = await _context.Machines
+                .Where(m => m.MacAddress == macOrIp || m.Ip == macOrIp)
+                .Select(m => new {
+                    m.Id,
+                    m.Name,
+                    m.MacAddress,
+                    m.Ip,
+                    m.Status
+                })
+                .ToListAsync();
+
+            return Ok(new { 
+                query = macOrIp,
+                count = machines.Count,
+                machines = machines
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in debug lookup");
+            return StatusCode(500, new { error = "Debug lookup failed", details = ex.Message });
+        }
+    }
+
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Machine>>> GetMachines()
     {
@@ -66,8 +97,9 @@ public class MachinesController : ControllerBase
     {
         try
         {
+            // Tạm thời disable Include để tránh lỗi Station mapping
             var machine = await _context.Machines
-                .Include(m => m.Station)
+                //.Include(m => m.Station)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (machine == null)
@@ -89,9 +121,6 @@ public class MachinesController : ControllerBase
     {
         try
         {
-            machine.CreatedAt = DateTime.UtcNow;
-            machine.UpdatedAt = DateTime.UtcNow;
-
             _context.Machines.Add(machine);
             await _context.SaveChangesAsync();
 
@@ -114,7 +143,6 @@ public class MachinesController : ControllerBase
 
         try
         {
-            machine.UpdatedAt = DateTime.UtcNow;
             _context.Entry(machine).State = EntityState.Modified;
             await _context.SaveChangesAsync();
 
@@ -158,37 +186,305 @@ public class MachinesController : ControllerBase
         }
     }
 
+
     [HttpPost("register")]
-    public async Task<ActionResult<object>> RegisterMachine([FromBody] object registrationRequest)
+    public async Task<ActionResult> RegisterMachine([FromBody] MachineManagement.API.Models.MachineRegistrationRequest registrationRequest)
     {
         try
         {
-            _logger.LogInformation("Machine registration request received");
-            
-            // For now, just return a success response with sample machine info
-            // TODO: Implement actual machine registration logic
-            
-            return Ok(new 
-            { 
-                IsSuccess = true, 
-                Message = "Machine registered successfully",
-                MachineInfo = new {
-                    ID = 1,
-                    Name = "Machine-001",
-                    Status = "Active",
-                    BuyerName = "Toyota Vietnam",
-                    LineName = "Assembly Line 1",
-                    StationName = "Station A1",
-                    ModelName = "Camry 2024",
-                    ProgramName = "ProductionApp v1.0"
-                },
-                IsNewMachine = true
+            _logger.LogInformation("Machine registration request received: MAC={Mac}, IP={IP}", registrationRequest.MacAddress, registrationRequest.IP);
+
+            // Tìm máy theo MAC address trước (MAC là unique cho từng máy vật lý)
+            var machine = await _context.Machines
+                .FirstOrDefaultAsync(m => m.MacAddress == registrationRequest.MacAddress);
+
+            bool isNew = false;
+            if (machine == null)
+            {
+                // Kiểm tra IP có bị trùng với máy khác không
+                var existingMachineWithSameIP = await _context.Machines
+                    .FirstOrDefaultAsync(m => m.Ip == registrationRequest.IP);
+
+                if (existingMachineWithSameIP != null)
+                {
+                    // Không log warning nữa, chỉ trả về thông tin machine hiện tại
+                    
+                    // Tạm thời bỏ Station/Line lookup để tránh lỗi database mapping
+                    var existingMachineDto = new MachineManagement.API.Models.MachineDetailDto
+                    {
+                        ID = existingMachineWithSameIP.Id,
+                        Name = existingMachineWithSameIP.Name ?? string.Empty,
+                        Status = existingMachineWithSameIP.Status ?? string.Empty,
+                        MachineTypeId = existingMachineWithSameIP.MachineTypeId,
+                        IP = existingMachineWithSameIP.Ip ?? string.Empty,
+                        GMES_Name = existingMachineWithSameIP.GmesName,
+                        StationID = existingMachineWithSameIP.StationId,
+                        ProgramName = existingMachineWithSameIP.ProgramName,
+                        MacAddress = existingMachineWithSameIP.MacAddress ?? string.Empty,
+                        BuyerName = "Unknown Buyer",
+                        LineName = "Unknown Line", 
+                        StationName = "Unknown Station",
+                        ModelName = string.Empty
+                    };
+                    
+                    return Ok(new MachineManagement.API.Models.MachineRegistrationResponse
+                    {
+                        IsSuccess = true,
+                        Message = "IP already exists with different MAC address",
+                        RequiresMacUpdate = true,
+                        ExistingMachine = existingMachineDto,
+                        IsNewMachine = false
+                    });
+                }
+
+                // Tạo mới máy
+                machine = new MachineManagement.Core.Entities.Machine
+                {
+                    Name = registrationRequest.MachineName ?? $"MACHINE_{registrationRequest.MacAddress}",
+                    MacAddress = registrationRequest.MacAddress,
+                    Ip = registrationRequest.IP,
+                    AppVersion = registrationRequest.AppVersion ?? "1.0.0",
+                    Status = "Active"
+                };
+                _context.Machines.Add(machine);
+                await _context.SaveChangesAsync();
+                isNew = true;
+                _logger.LogInformation("New machine created: MAC={MAC}, IP={IP}, ID={ID}", 
+                    machine.MacAddress, machine.Ip, machine.Id);
+            }
+            else
+            {
+                // Cập nhật thông tin nếu IP đã thay đổi
+                if (machine.Ip != registrationRequest.IP)
+                {
+                    // Kiểm tra IP mới có bị trùng không
+                    var existingMachineWithNewIP = await _context.Machines
+                        .FirstOrDefaultAsync(m => m.Ip == registrationRequest.IP && m.Id != machine.Id);
+
+                    if (existingMachineWithNewIP != null)
+                    {
+                        // Không log warning nữa, chỉ trả về thông tin machine hiện tại
+                        
+                        // Lấy thông tin liên quan cho existing machine
+                        var existingMachineWithRelations = await _context.Machines
+                            .Include(m => m.Station)
+                                .ThenInclude(s => s.Line)
+                            .Include(m => m.Station)
+                                .ThenInclude(s => s.ModelProcess)
+                                    .ThenInclude(mp => mp.ModelGroup)
+                                        .ThenInclude(mg => mg.Buyer)
+                            .Include(m => m.MachineType)
+                            .FirstOrDefaultAsync(m => m.Id == existingMachineWithNewIP.Id);
+
+                        Station? updateStation = existingMachineWithRelations?.Station;
+                        Line? updateLine = updateStation?.Line;
+                        ModelProcess? updateModelProcess = updateStation?.ModelProcess;
+                        ModelGroup? updateModelGroup = updateModelProcess?.ModelGroup;
+                        Buyer? updateBuyer = updateModelGroup?.Buyer;
+                        MachineType? updateMachineType = existingMachineWithRelations?.MachineType;
+
+                        var existingMachineDto = new MachineManagement.API.Models.MachineDetailDto
+                        {
+                            ID = existingMachineWithNewIP.Id,
+                            Name = existingMachineWithNewIP.Name ?? string.Empty,
+                            Status = existingMachineWithNewIP.Status ?? string.Empty,
+                            MachineTypeId = existingMachineWithNewIP.MachineTypeId,
+                            IP = existingMachineWithNewIP.Ip ?? string.Empty,
+                            GMES_Name = existingMachineWithNewIP.GmesName,
+                            StationID = existingMachineWithNewIP.StationId,
+                            ProgramName = existingMachineWithNewIP.ProgramName,
+                            MacAddress = existingMachineWithNewIP.MacAddress ?? string.Empty,
+                            BuyerName = updateBuyer?.Name ?? "Unknown Buyer",
+                            LineName = updateLine?.Name ?? "Unknown Line",
+                            StationName = updateStation?.Name ?? "Unknown Station",
+                            ModelName = updateModelGroup?.Name ?? "Unknown Model",
+                            MachineTypeName = updateMachineType?.Name ?? "Unknown Type"
+                        };
+                        
+                        return Ok(new MachineManagement.API.Models.MachineRegistrationResponse
+                        {
+                            IsSuccess = true,
+                            Message = "IP already exists with different MAC address",
+                            RequiresMacUpdate = true,
+                            ExistingMachine = existingMachineDto,
+                            IsNewMachine = false
+                        });
+                    }
+
+                    _logger.LogInformation("Updating machine IP: MAC={MAC}, Old IP={OldIP}, New IP={NewIP}", 
+                        machine.MacAddress, machine.Ip, registrationRequest.IP);
+                    machine.Ip = registrationRequest.IP;
+                }
+
+                // Cập nhật các thông tin khác              
+                if (!string.IsNullOrEmpty(registrationRequest.AppVersion))
+                    machine.AppVersion = registrationRequest.AppVersion;
+
+                machine.LastSeen = DateTime.Now;
+                machine.Status = "Active";
+
+                await _context.SaveChangesAsync();
+                // Không log update nữa - chỉ log khi tạo machine mới
+            }
+
+            // Lấy thông tin liên quan với proper includes
+            var machineWithRelations = await _context.Machines
+                .Include(m => m.Station)
+                    .ThenInclude(s => s.Line)
+                .Include(m => m.Station)
+                    .ThenInclude(s => s.ModelProcess)
+                        .ThenInclude(mp => mp.ModelGroup)
+                            .ThenInclude(mg => mg.Buyer)
+                .Include(m => m.MachineType)
+                .FirstOrDefaultAsync(m => m.Id == machine.Id);
+
+            // Fallback nếu không tìm thấy relations
+            Station? station = machineWithRelations?.Station;
+            Line? line = station?.Line;
+            ModelProcess? modelProcess = station?.ModelProcess;
+            ModelGroup? modelGroup = modelProcess?.ModelGroup;
+            Buyer? buyer = modelGroup?.Buyer;
+            MachineType? machineType = machineWithRelations?.MachineType;
+
+            // Map sang DTO trả về
+            var dto = new MachineManagement.API.Models.MachineDetailDto
+            {
+                ID = machine.Id,
+                Name = machine.Name,
+                Status = machine.Status ?? string.Empty,
+                MachineTypeId = machine.MachineTypeId,
+                IP = machine.Ip ?? string.Empty,
+                GMES_Name = machine.GmesName,
+                StationID = machine.StationId,
+                ProgramName = machine.ProgramName,
+                MacAddress = machine.MacAddress ?? string.Empty,
+                BuyerName = buyer?.Name ?? "Unknown Buyer", 
+                LineName = line?.Name ?? "Unknown Line",
+                StationName = station?.Name ?? "Unknown Station",
+                ModelName = modelGroup?.Name ?? "Unknown Model",
+                MachineTypeName = machineType?.Name ?? "Unknown Type"
+            };
+
+            return Ok(new MachineManagement.API.Models.MachineRegistrationResponse
+            {
+                IsSuccess = true,
+                Message = isNew ? "Machine registered successfully" : "Machine found",
+                MachineInfo = dto,
+                IsNewMachine = isNew
             });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error registering machine");
             return StatusCode(500, new { IsSuccess = false, Message = "Registration failed", Details = ex.Message });
+        }
+    }
+
+    [HttpPut("update-mac")]
+    public async Task<ActionResult> UpdateMacAddress([FromBody] MachineManagement.API.Models.MacUpdateRequest updateRequest)
+    {
+        try
+        {
+            _logger.LogInformation("MAC update request received: IP={IP}, NewMAC={NewMAC}", updateRequest.IP, updateRequest.NewMacAddress);
+
+            // Tìm machine theo IP
+            var machine = await _context.Machines
+                .FirstOrDefaultAsync(m => m.Ip == updateRequest.IP);
+
+            if (machine == null)
+            {
+                return NotFound(new MachineManagement.API.Models.MacUpdateResponse
+                {
+                    IsSuccess = false,
+                    Message = "Machine with specified IP not found"
+                });
+            }
+
+            // Kiểm tra MAC mới có bị trùng với machine khác không
+            var existingMachineWithNewMac = await _context.Machines
+                .FirstOrDefaultAsync(m => m.MacAddress == updateRequest.NewMacAddress && m.Id != machine.Id);
+
+            if (existingMachineWithNewMac != null)
+            {
+                return BadRequest(new MachineManagement.API.Models.MacUpdateResponse
+                {
+                    IsSuccess = false,
+                    Message = $"MAC address {updateRequest.NewMacAddress} is already used by another machine"
+                });
+            }
+
+            // Cập nhật MAC address
+            var oldMac = machine.MacAddress;
+            machine.MacAddress = updateRequest.NewMacAddress;
+            
+            // Cập nhật thông tin khác nếu có
+            if (!string.IsNullOrEmpty(updateRequest.MachineName))
+                machine.Name = updateRequest.MachineName;
+            
+            if (!string.IsNullOrEmpty(updateRequest.AppVersion))
+                machine.AppVersion = updateRequest.AppVersion;
+
+            machine.LastSeen = DateTime.Now;
+            machine.Status = "Active";
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("MAC updated successfully: IP={IP}, OldMAC={OldMAC}, NewMAC={NewMAC}, ID={ID}", 
+                machine.Ip, oldMac, machine.MacAddress, machine.Id);
+
+            // Lấy thông tin liên quan với proper includes
+            var machineWithRelations = await _context.Machines
+                .Include(m => m.Station)
+                    .ThenInclude(s => s.Line)
+                .Include(m => m.Station)
+                    .ThenInclude(s => s.ModelProcess)
+                        .ThenInclude(mp => mp.ModelGroup)
+                            .ThenInclude(mg => mg.Buyer)
+                .Include(m => m.MachineType)
+                .FirstOrDefaultAsync(m => m.Id == machine.Id);
+
+            // Fallback nếu không tìm thấy relations
+            Station? station = machineWithRelations?.Station;
+            Line? line = station?.Line;
+            ModelProcess? modelProcess = station?.ModelProcess;
+            ModelGroup? modelGroup = modelProcess?.ModelGroup;
+            Buyer? buyer = modelGroup?.Buyer;
+            MachineType? machineType = machineWithRelations?.MachineType;
+
+            // Map sang DTO trả về
+            var dto = new MachineManagement.API.Models.MachineDetailDto
+            {
+                ID = machine.Id,
+                Name = machine.Name,
+                Status = machine.Status ?? string.Empty,
+                MachineTypeId = machine.MachineTypeId,
+                IP = machine.Ip ?? string.Empty,
+                GMES_Name = machine.GmesName,
+                StationID = machine.StationId,
+                ProgramName = machine.ProgramName,
+                MacAddress = machine.MacAddress ?? string.Empty,
+                BuyerName = buyer?.Name ?? "Unknown Buyer",
+                LineName = line?.Name ?? "Unknown Line",
+                StationName = station?.Name ?? "Unknown Station",
+                ModelName = modelGroup?.Name ?? "Unknown Model",
+                MachineTypeName = machineType?.Name ?? "Unknown Type"
+            };
+
+            return Ok(new MachineManagement.API.Models.MacUpdateResponse
+            {
+                IsSuccess = true,
+                Message = "MAC address updated successfully",
+                MachineInfo = dto
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating MAC address");
+            return StatusCode(500, new MachineManagement.API.Models.MacUpdateResponse
+            {
+                IsSuccess = false,
+                Message = "MAC update failed"
+            });
         }
     }
 

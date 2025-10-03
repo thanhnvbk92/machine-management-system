@@ -4,16 +4,15 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace MachineManagement.Core.Entities
 {
     [Table("machinetypes")]
-    public class MachineType : BaseEntity
+    public class MachineType
     {
+        [Key]
+        [Column("Id")]
+        public int Id { get; set; }
+        
         [Required]
-        [MaxLength(255)]
+        [MaxLength(45)]
         public string Name { get; set; } = string.Empty;
-        
-        public string? Description { get; set; }
-        
-        [Required]
-        public bool IsActive { get; set; } = true;
         
         // Navigation properties
         public virtual ICollection<Machine> Machines { get; set; } = new List<Machine>();

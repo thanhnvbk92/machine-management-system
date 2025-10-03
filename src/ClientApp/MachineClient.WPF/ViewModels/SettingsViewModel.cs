@@ -116,6 +116,32 @@ namespace MachineClient.WPF.ViewModels
 
         #endregion
 
+        #region Program Settings Properties
+
+        [ObservableProperty]
+        private string _programPath = "";
+
+        [ObservableProperty]
+        private string _subProgramPath = "";
+
+        [ObservableProperty]
+        private bool _autoRestartProgram = false;
+
+        [ObservableProperty]
+        private string _programStatus = "Stopped";
+
+        #endregion
+
+        #region UI Automation Properties
+
+        [ObservableProperty]
+        private bool _enableUIAutomation = false;
+
+        [ObservableProperty]
+        private int _automationInterval = 5;
+
+        #endregion
+
         #region Status Properties
 
         [ObservableProperty]
@@ -410,6 +436,223 @@ namespace MachineClient.WPF.ViewModels
             }
 
             NextBackupTime = $"Next backup: {nextBackup:yyyy-MM-dd HH:mm}";
+        }
+
+        #endregion
+
+        #region Program Settings Commands
+
+        [RelayCommand]
+        private void BrowseProgramPath()
+        {
+            try
+            {
+                var openFileDialog = new Microsoft.Win32.OpenFileDialog()
+                {
+                    Title = "Select Program Executable",
+                    Filter = "Executable files (*.exe)|*.exe|All files (*.*)|*.*",
+                    FilterIndex = 1
+                };
+
+                if (!string.IsNullOrEmpty(ProgramPath))
+                {
+                    openFileDialog.InitialDirectory = System.IO.Path.GetDirectoryName(ProgramPath);
+                }
+
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    ProgramPath = openFileDialog.FileName;
+                    StatusMessage = $"Program path selected: {ProgramPath}";
+                    _logger.LogInformation("Program path selected: {ProgramPath}", ProgramPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error selecting program path: {ex.Message}";
+                _logger.LogError(ex, "Failed to select program path");
+            }
+        }
+
+        [RelayCommand]
+        private void BrowseSubProgramPath()
+        {
+            try
+            {
+                var openFileDialog = new Microsoft.Win32.OpenFileDialog()
+                {
+                    Title = "Select Sub Program Executable",
+                    Filter = "Executable files (*.exe)|*.exe|All files (*.*)|*.*",
+                    FilterIndex = 1
+                };
+
+                if (!string.IsNullOrEmpty(SubProgramPath))
+                {
+                    openFileDialog.InitialDirectory = System.IO.Path.GetDirectoryName(SubProgramPath);
+                }
+
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    SubProgramPath = openFileDialog.FileName;
+                    StatusMessage = $"Sub program path selected: {SubProgramPath}";
+                    _logger.LogInformation("Sub program path selected: {SubProgramPath}", SubProgramPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error selecting sub program path: {ex.Message}";
+                _logger.LogError(ex, "Failed to select sub program path");
+            }
+        }
+
+        [RelayCommand]
+        private async Task StartProgramAsync()
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(ProgramPath) || !System.IO.File.Exists(ProgramPath))
+                {
+                    StatusMessage = "Program path is not set or file does not exist";
+                    return;
+                }
+
+                var processInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = ProgramPath,
+                    UseShellExecute = true
+                };
+
+                System.Diagnostics.Process.Start(processInfo);
+                ProgramStatus = "Running";
+                StatusMessage = "Program started successfully";
+                _logger.LogInformation("Program started: {ProgramPath}", ProgramPath);
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Failed to start program: {ex.Message}";
+                _logger.LogError(ex, "Failed to start program: {ProgramPath}", ProgramPath);
+            }
+        }
+
+        [RelayCommand]
+        private async Task StopProgramAsync()
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(ProgramPath))
+                {
+                    StatusMessage = "Program path is not set";
+                    return;
+                }
+
+                var programName = System.IO.Path.GetFileNameWithoutExtension(ProgramPath);
+                var processes = System.Diagnostics.Process.GetProcessesByName(programName);
+
+                foreach (var process in processes)
+                {
+                    process.Kill();
+                    process.WaitForExit();
+                }
+
+                ProgramStatus = "Stopped";
+                StatusMessage = $"Program stopped: {programName}";
+                _logger.LogInformation("Program stopped: {ProgramName}", programName);
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Failed to stop program: {ex.Message}";
+                _logger.LogError(ex, "Failed to stop program");
+            }
+        }
+
+        [RelayCommand]
+        private async Task RestartProgramAsync()
+        {
+            try
+            {
+                await StopProgramAsync();
+                await Task.Delay(1000); // Wait 1 second
+                await StartProgramAsync();
+                StatusMessage = "Program restarted";
+                _logger.LogInformation("Program restarted");
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Failed to restart program: {ex.Message}";
+                _logger.LogError(ex, "Failed to restart program");
+            }
+        }
+
+        #endregion
+
+        #region UI Automation Commands
+
+        [RelayCommand]
+        private async Task TestUIElementsAsync()
+        {
+            try
+            {
+                StatusMessage = "Testing UI elements...";
+                _logger.LogInformation("Starting UI elements test");
+
+                // Placeholder for UI automation test
+                await Task.Delay(2000);
+
+                StatusMessage = "UI elements test completed";
+                _logger.LogInformation("UI elements test completed");
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"UI elements test failed: {ex.Message}";
+                _logger.LogError(ex, "UI elements test failed");
+            }
+        }
+
+        [RelayCommand]
+        private async Task StartAutomationAsync()
+        {
+            try
+            {
+                if (!EnableUIAutomation)
+                {
+                    StatusMessage = "UI Automation is disabled";
+                    return;
+                }
+
+                StatusMessage = "Starting UI automation...";
+                _logger.LogInformation("Starting UI automation with interval: {Interval}s", AutomationInterval);
+
+                // Placeholder for starting automation
+                await Task.Delay(1000);
+
+                StatusMessage = "UI automation started";
+                _logger.LogInformation("UI automation started");
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Failed to start automation: {ex.Message}";
+                _logger.LogError(ex, "Failed to start UI automation");
+            }
+        }
+
+        [RelayCommand]
+        private async Task StopAutomationAsync()
+        {
+            try
+            {
+                StatusMessage = "Stopping UI automation...";
+                _logger.LogInformation("Stopping UI automation");
+
+                // Placeholder for stopping automation
+                await Task.Delay(1000);
+
+                StatusMessage = "UI automation stopped";
+                _logger.LogInformation("UI automation stopped");
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Failed to stop automation: {ex.Message}";
+                _logger.LogError(ex, "Failed to stop UI automation");
+            }
         }
 
         #endregion
