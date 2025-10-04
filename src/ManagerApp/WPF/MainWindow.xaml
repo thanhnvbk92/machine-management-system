@@ -1,0 +1,479 @@
+<Window x:Class="MachineManagerApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:models="clr-namespace:MachineManagerApp.Models"
+        mc:Ignorable="d"
+        Title="Machine Manager - WPF Application" 
+        Height="800" Width="1200"
+        WindowStartupLocation="CenterScreen"
+        Background="White">
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" 
+                Background="#2196F3" 
+                Padding="16"
+                CornerRadius="4"
+                Margin="0,0,0,16">
+            <TextBlock Text="Machine Management System" 
+                     FontSize="24" 
+                     FontWeight="Bold" 
+                     Foreground="White"
+                     HorizontalAlignment="Center"/>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="300"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Production Lines TreeView -->
+            <Border Grid.Column="0" 
+                   BorderBrush="#E0E0E0" 
+                   BorderThickness="1"
+                   CornerRadius="4">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" 
+                           Background="#F8F9FA"
+                           Padding="16,12"
+                           CornerRadius="4,4,0,0">
+                        <TextBlock Text="Production Lines" 
+                                 FontSize="16" 
+                                 FontWeight="Bold"/>
+                    </Border>
+
+                    <TreeView Grid.Row="1" 
+                            ItemsSource="{Binding ProductionLines}"
+                            SelectedItemChanged="TreeView_SelectedItemChanged"
+                            Margin="8">
+                        <TreeView.Resources>
+                            <HierarchicalDataTemplate DataType="{x:Type models:ProductionLine}" 
+                                                    ItemsSource="{Binding Machines}">
+                                <StackPanel Orientation="Horizontal" 
+                                          Margin="0,4">
+                                    <CheckBox IsChecked="{Binding CheckBoxState, Mode=TwoWay}" 
+                                            IsThreeState="True"
+                                            VerticalAlignment="Center" 
+                                            Margin="0,0,8,0"/>
+                                    <TextBlock Text="📁" 
+                                             Width="16" Height="16" 
+                                             VerticalAlignment="Center" 
+                                             Margin="0,0,8,0"/>
+                                    <TextBlock Text="{Binding Name}" 
+                                             FontWeight="Bold" 
+                                             VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Machines.Count, StringFormat='({0})'}" 
+                                             Margin="8,0,0,0" 
+                                             Foreground="Gray" 
+                                             FontSize="12" 
+                                             VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </HierarchicalDataTemplate>
+
+                            <DataTemplate DataType="{x:Type models:Machine}">
+                                <StackPanel Orientation="Horizontal" 
+                                          Margin="0,2">
+                                    <TextBlock Text="🖥️" 
+                                             Width="14" Height="14" 
+                                             VerticalAlignment="Center" 
+                                             Margin="0,0,6,0"/>
+                                    <TextBlock Text="{Binding Name}" 
+                                             VerticalAlignment="Center"/>
+                                    <Ellipse Width="8" Height="8" 
+                                           Margin="8,0,0,0" 
+                                           VerticalAlignment="Center">
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse">
+                                                <Setter Property="Fill" Value="Gray"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Running">
+                                                        <Setter Property="Fill" Value="#4CAF50"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Stopped">
+                                                        <Setter Property="Fill" Value="#F44336"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Idle">
+                                                        <Setter Property="Fill" Value="#FF9800"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Error">
+                                                        <Setter Property="Fill" Value="#E91E63"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                </StackPanel>
+                            </DataTemplate>
+                        </TreeView.Resources>
+                    </TreeView>
+                </Grid>
+            </Border>
+
+            <!-- Machine Details ListView -->
+            <Border Grid.Column="2" 
+                   BorderBrush="#E0E0E0" 
+                   BorderThickness="1"
+                   CornerRadius="4">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" 
+                           Background="#F8F9FA"
+                           Padding="16,12"
+                           CornerRadius="4,4,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Machine Details" 
+                                     FontSize="16" 
+                                     FontWeight="Bold"/>
+                            <TextBlock Text="{Binding SelectedLine.Name, StringFormat=' - {0}'}" 
+                                     FontSize="14" 
+                                     Margin="8,0,0,0"
+                                     Foreground="Gray"/>
+                        </StackPanel>
+                    </Border>
+
+                    <ListView Grid.Row="1" 
+                            ItemsSource="{Binding SelectedMachines}"
+                            SelectedItem="{Binding SelectedMachine}"
+                            Margin="8">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Select" Width="80">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" 
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="Name" Width="150">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="🖥️" 
+                                                         Width="16" Height="16" 
+                                                         Margin="0,0,8,0" 
+                                                         VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding Name}" 
+                                                         VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+
+                                <GridViewColumn Header="IP Address" Width="120">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding IpAddress}" 
+                                                     FontFamily="Consolas"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+
+                                <GridViewColumn Header="Status" Width="100">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Border CornerRadius="12" 
+                                                  Padding="8,4"
+                                                  HorizontalAlignment="Center">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="Gray"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Running">
+                                                                <Setter Property="Background" Value="#4CAF50"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Stopped">
+                                                                <Setter Property="Background" Value="#F44336"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Idle">
+                                                                <Setter Property="Background" Value="#FF9800"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Error">
+                                                                <Setter Property="Background" Value="#E91E63"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock Text="{Binding Status}" 
+                                                         Foreground="White"
+                                                         FontSize="10"
+                                                         FontWeight="Bold"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </Grid>
+            </Border>
+
+            <!-- Command Panel -->
+            <Border Grid.Column="4" 
+                   BorderBrush="#E0E0E0" 
+                   BorderThickness="1"
+                   CornerRadius="4">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" 
+                           Background="#F8F9FA"
+                           Padding="16,12"
+                           CornerRadius="4,4,0,0">
+                        <TextBlock Text="Commands" 
+                                 FontSize="16" 
+                                 FontWeight="Bold"/>
+                    </Border>
+
+                    <!-- Command Buttons -->
+                    <StackPanel Grid.Row="1" 
+                              Margin="16">
+                        
+                        <!-- Production Line Commands -->
+                        <TextBlock Text="Production Line Commands" 
+                                 Foreground="#666" 
+                                 FontWeight="SemiBold" 
+                                 Margin="0,0,0,4"/>
+                        
+                        <Button Background="#4CAF50"
+                              Foreground="White"
+                              Command="{Binding StartSelectedLinesCommand}"
+                              Height="36"
+                              Margin="0,0,0,8"
+                              Content="▶️ Start Selected Lines"/>
+
+                        <Button Background="#F44336"
+                              Foreground="White"
+                              Command="{Binding StopSelectedLinesCommand}"
+                              Height="36"
+                              Margin="0,0,0,8"
+                              Content="⏹️ Stop Selected Lines"/>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button BorderBrush="#666"
+                                  BorderThickness="1"
+                                  Background="Transparent"
+                                  Command="{Binding SelectAllLinesCommand}"
+                                  Height="32"
+                                  Margin="0,0,4,0"
+                                  Padding="8,0"
+                                  Content="✅ Select All Lines"/>
+                            
+                            <Button BorderBrush="#666"
+                                  BorderThickness="1"
+                                  Background="Transparent"
+                                  Command="{Binding DeselectAllLinesCommand}"
+                                  Height="32"
+                                  Padding="8,0"
+                                  Content="❌ Deselect All Lines"/>
+                        </StackPanel>
+
+                        <Separator Margin="0,8"/>
+
+                        <!-- Individual Machine Commands -->
+                        <TextBlock Text="Individual Machine Commands" 
+                                 Foreground="#666" 
+                                 FontWeight="SemiBold" 
+                                 Margin="0,0,0,4"/>
+
+                        <Button Background="#4CAF50"
+                              Foreground="White"
+                              Command="{Binding StartMachineCommand}"
+                              Height="36"
+                              Margin="0,0,0,8"
+                              Content="▶️ Start Machine"/>
+
+                        <Button Background="#F44336"
+                              Foreground="White"
+                              Command="{Binding StopMachineCommand}"
+                              Height="36"
+                              Margin="0,0,0,8"
+                              Content="⏹️ Stop Machine"/>
+
+                        <Button Background="#FF9800"
+                              Foreground="White"
+                              Command="{Binding RestartMachineCommand}"
+                              Height="36"
+                              Margin="0,0,0,8"
+                              Content="🔄 Restart Machine"/>
+
+                        <Button BorderBrush="#666"
+                              BorderThickness="1"
+                              Background="Transparent"
+                              Command="{Binding ResetMachineCommand}"
+                              Height="36"
+                              Margin="0,0,0,8"
+                              Content="🔄 Reset Machine"/>
+
+                        <Button BorderBrush="#666"
+                              BorderThickness="1"
+                              Background="Transparent"
+                              Command="{Binding UpdateStatusCommand}"
+                              Height="36"
+                              Margin="0,0,0,8"
+                              Content="🔄 Update Status"/>
+
+                        <Separator Margin="0,8"/>
+
+                        <!-- Multi-Selection Commands -->
+                        <TextBlock Text="Multi-Selection Commands" 
+                                 Foreground="#666" 
+                                 FontWeight="SemiBold" 
+                                 Margin="0,8,0,4"/>
+                        
+                        <Button Background="#4CAF50"
+                              Foreground="White"
+                              Command="{Binding StartSelectedMachinesCommand}"
+                              Height="36"
+                              Margin="0,0,0,8"
+                              Content="▶️ Start Selected"/>
+
+                        <Button Background="#F44336"
+                              Foreground="White"
+                              Command="{Binding StopSelectedMachinesCommand}"
+                              Height="36"
+                              Margin="0,0,0,8"
+                              Content="⏹️ Stop Selected"/>
+
+                        <Button Background="#FF9800"
+                              Foreground="White"
+                              Command="{Binding RestartSelectedMachinesCommand}"
+                              Height="36"
+                              Margin="0,0,0,8"
+                              Content="🔄 Restart Selected"/>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button BorderBrush="#666"
+                                  BorderThickness="1"
+                                  Background="Transparent"
+                                  Command="{Binding SelectAllMachinesCommand}"
+                                  Height="32"
+                                  Margin="0,0,4,0"
+                                  Padding="8,0"
+                                  Content="✅ Select All"/>
+                            
+                            <Button BorderBrush="#666"
+                                  BorderThickness="1"
+                                  Background="Transparent"
+                                  Command="{Binding DeselectAllMachinesCommand}"
+                                  Height="32"
+                                  Padding="8,0"
+                                  Content="❌ Deselect All"/>
+                        </StackPanel>
+
+                        <Separator Margin="0,8"/>
+
+                        <TextBox Text="{Binding CommandText}"
+                               Margin="0,8,0,0"
+                               Height="32"
+                               VerticalContentAlignment="Center"
+                               BorderBrush="#DDD"
+                               Padding="8,4"/>
+
+                        <Button Background="#2196F3"
+                              Foreground="White"
+                              Command="{Binding SendCustomCommandCommand}"
+                              Height="36"
+                              Margin="0,8,0,0"
+                              Content="📤 Send Command"/>
+                    </StackPanel>
+
+                    <!-- Log Messages -->
+                    <Border Grid.Row="2" 
+                           Margin="16,0,16,16"
+                           BorderBrush="#E0E0E0"
+                           BorderThickness="1"
+                           CornerRadius="4">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" 
+                                   Background="#333"
+                                   Padding="12,8"
+                                   CornerRadius="4,4,0,0">
+                                <TextBlock Text="Activity Log" 
+                                         FontSize="14" 
+                                         FontWeight="Bold"
+                                         Foreground="White"/>
+                            </Border>
+
+                            <ScrollViewer Grid.Row="1" 
+                                        VerticalScrollBarVisibility="Auto"
+                                        Padding="8">
+                                <TextBlock Text="{Binding LogMessages}" 
+                                         FontFamily="Consolas" 
+                                         FontSize="11"
+                                         TextWrapping="Wrap"/>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" 
+                Background="#F0F0F0"
+                Padding="16,8"
+                CornerRadius="4"
+                Margin="0,16,0,0">
+            <DockPanel>
+                <StackPanel Orientation="Horizontal" 
+                          DockPanel.Dock="Left">
+                    <TextBlock Text="ℹ️" 
+                             Width="16" Height="16" 
+                             VerticalAlignment="Center" 
+                             Margin="0,0,8,0"/>
+                    <TextBlock Text="Ready" 
+                             VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" 
+                          HorizontalAlignment="Right" 
+                          DockPanel.Dock="Right">
+                    <ProgressBar IsIndeterminate="True"
+                               Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
+                               Width="100"
+                               Height="4"
+                               VerticalAlignment="Center"
+                               Margin="0,0,16,0"/>
+                    <TextBlock Text="{Binding ProductionLines.Count, StringFormat='Lines: {0}'}" 
+                             VerticalAlignment="Center" 
+                             Margin="0,0,16,0"/>
+                    <TextBlock Text="{Binding SelectedMachines.Count, StringFormat='Machines: {0}'}" 
+                             VerticalAlignment="Center"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>
