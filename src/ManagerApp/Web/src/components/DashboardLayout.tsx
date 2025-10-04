@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
@@ -8,16 +8,13 @@ import {
   LayoutDashboard,
   Factory,
   Users,
-  Building2,
   Truck,
   Package,
   Cog,
-  Wrench,
   Settings,
   FileText,
   Terminal,
   ChevronDown,
-  ChevronRight,
   LogOut,
   Bell,
   Search,
@@ -26,7 +23,16 @@ import {
   ShoppingCart,
   MapPin,
   Box,
-  Play
+  Play,
+  Menu,
+  X,
+  BarChart3,
+  PieChart,
+  TrendingUp,
+  Activity,
+  Shield,
+  MessageSquare,
+  Calendar
 } from 'lucide-react';
 
 interface NavigationItem {
@@ -43,87 +49,52 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   
-  // Auto-expand groups that contain active routes
-  const getActiveGroups = () => {
-    const activeGroups: string[] = [];
-    
-    if (pathname.startsWith('/buyers') || pathname.startsWith('/lines') || 
-        pathname.startsWith('/models') || pathname.startsWith('/group-models') ||
-        pathname.startsWith('/model-processes') || pathname.startsWith('/stations')) {
-      activeGroups.push('production-management');
-    }
-    
-    if (pathname.startsWith('/machines') || pathname.startsWith('/machine-types')) {
-      activeGroups.push('equipment-management');
-    }
-    
-    return activeGroups;
-  };
-  
-  const [expandedGroups, setExpandedGroups] = useState<string[]>(() => {
-    const defaultExpanded = ['production-management', 'equipment-management'];
-    return [...defaultExpanded, ...getActiveGroups()];
-  });
-  
-  // Auto-expand groups when pathname changes
-  useEffect(() => {
-    const activeGroups = getActiveGroups();
-    setExpandedGroups(prev => {
-      const newExpanded = new Set([...prev, ...activeGroups]);
-      return Array.from(newExpanded);
-    });
-  }, [pathname]);
-
   const navigation: NavigationItem[] = [
     {
       name: 'Dashboard',
       href: '/dashboard',
-      icon: <LayoutDashboard size={18} />
+      icon: <LayoutDashboard size={20} />
     },
     {
       name: 'Production Management',
-      icon: <Factory size={18} />,
+      icon: <Factory size={20} />,
       children: [
-        { name: 'Buyers', href: '/buyers', icon: <ShoppingCart size={16} /> },
-        { name: 'Lines', href: '/lines', icon: <Truck size={16} /> },
-        { name: 'Models', href: '/models', icon: <Box size={16} /> },
-        { name: 'Group Models', href: '/group-models', icon: <Package size={16} /> },
-        { name: 'Model Processes', href: '/model-processes', icon: <Play size={16} /> },
-        { name: 'Stations', href: '/stations', icon: <MapPin size={16} /> },
+        { name: 'Buyers', href: '/buyers', icon: <ShoppingCart size={18} /> },
+        { name: 'Lines', href: '/lines', icon: <Truck size={18} /> },
+        { name: 'Models', href: '/models', icon: <Box size={18} /> },
+        { name: 'Group Models', href: '/group-models', icon: <Package size={18} /> },
+        { name: 'Model Processes', href: '/model-processes', icon: <Play size={18} /> },
+        { name: 'Stations', href: '/stations', icon: <MapPin size={18} /> },
       ]
     },
     {
       name: 'Equipment Management',
-      icon: <Cog size={18} />,
+      icon: <Cog size={20} />,
       children: [
-        { name: 'Machines', href: '/machines', icon: <Monitor size={16} /> },
-        { name: 'Machine Types', href: '/machine-types', icon: <Settings size={16} /> },
+        { name: 'Machines', href: '/machines', icon: <Monitor size={18} /> },
+        { name: 'Machine Types', href: '/machine-types', icon: <Settings size={18} /> },
       ]
     },
     {
       name: 'User Management',
       href: '/users',
-      icon: <Users size={18} />
+      icon: <Users size={20} />
     },
     {
-      name: 'System Logs',
-      href: '/logs',
-      icon: <Database size={18} />
+      name: 'System',
+      icon: <Database size={20} />,
+      children: [
+        { name: 'System Logs', href: '/logs', icon: <FileText size={18} /> },
+        { name: 'Commands', href: '/commands', icon: <Terminal size={18} /> },
+        { name: 'Security', href: '/security', icon: <Shield size={18} /> },
+      ]
     },
-    {
-      name: 'Commands',
-      href: '/commands',
-      icon: <Terminal size={18} />
-    },
-  ];  const toggleGroup = (groupName: string) => {
-    const groupKey = groupName.toLowerCase().replace(/\s+/g, '-');
-    setExpandedGroups(prev =>
-      prev.includes(groupKey)
-        ? prev.filter(g => g !== groupKey)
-        : [...prev, groupKey]
-    );
-  };  const isActiveRoute = (href?: string) => {
+  ];
+
+  const isActiveRoute = (href?: string) => {
     if (!href) return false;
     if (href === '/dashboard') {
       return pathname === '/dashboard';
@@ -131,131 +102,169 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return pathname.startsWith(href);
   };
 
-  const isGroupActive = (group: NavigationItem) => {
-    if (group.href) return isActiveRoute(group.href);
-    return group.children?.some(child => isActiveRoute(child.href)) || false;
-  };
-
-  const renderNavigationItem = (item: NavigationItem, level = 0) => {
-    const hasChildren = item.children && item.children.length > 0;
-    const groupKey = item.name.toLowerCase().replace(/\s+/g, '-');
-    const isExpanded = expandedGroups.includes(groupKey);
-    const isActive = hasChildren ? isGroupActive(item) : isActiveRoute(item.href);
-
-    if (hasChildren) {
-      return (
-        <div key={item.name}>
-          <button
-            onClick={() => toggleGroup(item.name)}
-            className={`${
-              isActive
-                ? 'bg-blue-50 border-blue-500 text-blue-700'
-                : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-            } group flex items-center justify-between w-full px-3 py-2 text-sm font-medium border-l-4 transition-colors`}
-          >
-            <div className="flex items-center">
-              <span className="mr-3">{item.icon}</span>
-              {item.name}
-            </div>
-            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-          </button>
-          {isExpanded && (
-            <div className="ml-4 space-y-1">
-              {item.children?.map(child => renderNavigationItem(child, level + 1))}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    return (
-      <Link
-        key={item.name}
-        href={item.href!}
-        className={`${
-          isActive
-            ? 'bg-blue-50 border-blue-500 text-blue-700'
-            : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-        } group flex items-center px-3 py-2 text-sm font-medium border-l-4 transition-colors ${
-          level > 0 ? 'ml-4' : ''
-        }`}
-      >
-        <span className="mr-3">{item.icon}</span>
-        {item.name}
-      </Link>
+  const toggleMenu = (menuName: string) => {
+    setExpandedMenus(prev => 
+      prev.includes(menuName) 
+        ? prev.filter(name => name !== menuName)
+        : [...prev, menuName]
     );
   };
 
+  const isMenuExpanded = (menuName: string) => {
+    return expandedMenus.includes(menuName);
+  };
+
+  const hasActiveChild = (children?: NavigationItem[]) => {
+    if (!children) return false;
+    return children.some(child => child.href && isActiveRoute(child.href));
+  };
+
+  // Auto-expand menus that contain active routes
+  useEffect(() => {
+    navigation.forEach(item => {
+      if (item.children && hasActiveChild(item.children)) {
+        if (!expandedMenus.includes(item.name)) {
+          setExpandedMenus(prev => [...prev, item.name]);
+        }
+      }
+    });
+  }, [pathname]);
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
-                  <Factory className="text-white" size={24} />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">Machine Management</h1>
-                  <p className="text-xs text-gray-500">Industrial Operations System</p>
-                </div>
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      {/* Sidebar */}
+      <div className="fixed inset-y-0 left-0 z-50 w-80 bg-gradient-to-b from-slate-800 to-slate-900 shadow-2xl">
+        {/* Logo & Brand */}
+        <div className="flex items-center h-20 px-6 border-b border-slate-700">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <Factory className="text-white" size={24} />
             </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                  <Search size={20} />
-                </button>
-                <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors relative">
-                  <Bell size={20} />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                </button>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm text-gray-600">Online</span>
-              </div>
-              
-              <div className="flex items-center space-x-3 pl-4 border-l border-gray-200">
-                <div className="text-sm text-right">
-                  <div className="font-medium text-gray-900">{user?.username}</div>
-                  <div className="text-gray-500">{user?.role}</div>
-                </div>
-                <button
-                  onClick={logout}
-                  className="flex items-center space-x-2 text-sm text-red-600 hover:text-red-800 font-medium transition-colors"
-                >
-                  <LogOut size={16} />
-                  <span>Logout</span>
-                </button>
-              </div>
+            <div>
+              <h1 className="text-xl font-bold text-white">Concept</h1>
+              <p className="text-xs text-slate-400">Machine Management</p>
             </div>
           </div>
         </div>
-      </nav>
 
-      <div className="flex">
-        {/* Sidebar */}
-        <div className="w-72 bg-white shadow-sm min-h-screen border-r border-gray-200">
-          <nav className="mt-6 px-3">
-            <div className="space-y-2">
-              {navigation.map(item => renderNavigationItem(item))}
+        {/* Navigation */}
+        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+          {navigation.map(item => (
+            <div key={item.name}>
+              {item.children ? (
+                // Menu with submenu
+                <div>
+                  <button
+                    onClick={() => toggleMenu(item.name)}
+                    className={`group w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                      hasActiveChild(item.children) || isMenuExpanded(item.name)
+                        ? 'text-white bg-slate-700' 
+                        : 'text-slate-300 hover:text-white hover:bg-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <span>{item.icon}</span>
+                      <span>{item.name}</span>
+                    </div>
+                    <ChevronDown 
+                      size={16} 
+                      className={`transition-transform duration-200 ${
+                        isMenuExpanded(item.name) ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+                  
+                  {/* Submenu */}
+                  <div className={`ml-4 mt-2 space-y-1 overflow-hidden transition-all duration-200 ${
+                    isMenuExpanded(item.name) ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                  }`}>
+                    {item.children.map(child => (
+                      <Link
+                        key={child.name}
+                        href={child.href || '#'}
+                        className={`flex items-center space-x-3 px-4 py-2.5 text-sm rounded-lg transition-all duration-200 ${
+                          isActiveRoute(child.href)
+                            ? 'text-white bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg' 
+                            : 'text-slate-400 hover:text-white hover:bg-slate-600'
+                        }`}
+                      >
+                        <span>{child.icon}</span>
+                        <span>{child.name}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                // Simple menu item
+                <Link
+                  href={item.href || '#'}
+                  className={`group flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                    isActiveRoute(item.href)
+                      ? 'text-white bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg' 
+                      : 'text-slate-300 hover:text-white hover:bg-slate-700'
+                  }`}
+                >
+                  <span>{item.icon}</span>
+                  <span>{item.name}</span>
+                </Link>
+              )}
             </div>
-          </nav>
-        </div>
+          ))}
+        </nav>
 
-        {/* Main content */}
-        <div className="flex-1">
-          <main className="py-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              {children}
+        {/* User Profile */}
+        <div className="p-4 border-t border-slate-700">
+          <div className="flex items-center space-x-3 p-3 rounded-xl bg-slate-700">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+              <span className="text-white font-semibold text-sm">
+                {user?.username?.charAt(0).toUpperCase()}
+              </span>
             </div>
-          </main>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-white">{user?.username}</p>
+              <p className="text-xs text-slate-400">{user?.role}</p>
+            </div>
+            <button onClick={logout} className="p-2 text-slate-400 hover:text-white">
+              <LogOut size={16} />
+            </button>
+          </div>
         </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="ml-80">
+        {/* Top Header */}
+        <header className="bg-white shadow-sm border-b border-slate-200">
+          <div className="flex items-center justify-between h-20 px-6">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900">Dashboard</h2>
+              <p className="text-sm text-slate-500">Welcome back, {user?.username}</p>
+            </div>
+            <div className="flex items-center space-x-6">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="w-80 pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                />
+              </div>
+              <button className="relative p-3 text-slate-600 hover:bg-slate-100 rounded-xl">
+                <Bell size={20} />
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
+              </button>
+              <div className="flex items-center space-x-2 px-3 py-2 bg-green-50 text-green-700 rounded-xl">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium">System Online</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="p-6">
+          {children}
+        </main>
       </div>
     </div>
   );
